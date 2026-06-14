@@ -1,0 +1,214 @@
+﻿@model IEnumerable<HTicket.Models.Event>
+
+@{
+    ViewData["Title"] = "Trang chủ - Hệ thống Đặt vé";
+}
+
+@* 1. Header Banner *@
+<div class="py-5 text-center bg-dark text-white mb-0 shadow" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30'); background-size: cover; background-position: center; min-height: 320px; display: flex; align-items: center;">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold">Khám Phá Các Sự Kiện Sắp Diễn Ra</h1>
+        <p class="lead">Tìm kiếm trải nghiệm âm nhạc, nghệ thuật và văn hóa tuyệt vời nhất.</p>
+    </div>
+</div>
+
+@* 2. Thanh Tìm Kiếm Nổi (Floating Search Bar) *@
+<div class="container" style="margin-top: -35px; position: relative; z-index: 100;">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="input-group input-group-lg shadow-lg rounded-pill overflow-hidden bg-white border">
+                <span class="input-group-text bg-white border-0 ps-4">
+                    <i class="bi bi-search text-primary"></i>
+                </span>
+                <input type="text" id="txtSearch" class="form-control border-0 py-3 shadow-none" placeholder="Nhập tên sự kiện hoặc địa điểm..." style="font-size: 1.1rem;">
+                <button class="btn btn-primary px-4 fw-bold" type="button">Tìm kiếm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* 3. Bộ lọc trạng thái *@
+<div class="container mt-5">
+    <div class="row mb-5">
+        <div class="col-12 d-flex justify-content-center">
+            <div class="btn-group shadow-sm p-1 bg-white rounded-pill" role="group" id="eventFilters">
+                <button type="button" class="btn btn-primary rounded-pill px-4 filter-btn" data-filter="all">Tất cả</button>
+                <button type="button" class="btn btn-outline-primary border-0 rounded-pill px-4 filter-btn" data-filter="Đang mở bán">🔥 Đang bán</button>
+                <button type="button" class="btn btn-outline-primary border-0 rounded-pill px-4 filter-btn" data-filter="Sắp diễn ra">⏳ Sắp diễn ra</button>
+                <button type="button" class="btn btn-outline-primary border-0 rounded-pill px-4 filter-btn" data-filter="Đã kết thúc">🔒 Đã xong</button>
+            </div>
+        </div>
+    </div>
+
+    @* 4. Danh sách sự kiện *@
+    <div class="row" id="eventList">
+        @foreach (var ev in Model)
+        {
+            
+            <div class="col-md-6 col-lg-4 mb-4 event-card" data-status="@ev.Status" data-name="@ev.Name.ToLower()" data-location="@ev.Location?.ToLower()">
+                <div class="card h-100 shadow-sm border-0 transition-hover overflow-hidden">
+                    
+                    @* Ảnh sự kiện lấy từ Unsplash dựa trên ID *@
+                    <img src="https://picsum.photos/seed/@(ev.Id + 123)/600/400" class="card-img-top" alt="@ev.Name" style="height: 200px; object-fit: cover;">
+
+                    @* Badge Trạng thái *@
+                    <div class="position-absolute top-0 end-0 m-3">
+                        @{
+                            var badgeClass = ev.Status == "Đang mở bán" ? "bg-success" : (ev.Status == "Sắp diễn ra" ? "bg-warning text-dark" : "bg-secondary");
+                        }
+                        <span class="badge @badgeClass shadow-sm px-3 py-2">@ev.Status</span>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <h4 class="card-title fw-bold text-primary mb-3">@ev.Name</h4>
+                        
+                        <div class="d-flex mb-2 text-muted">
+                            <i class="bi bi-calendar-event me-2 text-primary"></i>
+                            <span>@ev.EventDate?.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        
+                        <div class="d-flex mb-3 text-muted">
+                            <i class="bi bi-geo-alt-fill me-2 text-danger"></i>
+                            <span class="fw-medium">@ev.Location</span>
+                        </div>
+
+                        <p class="card-text text-secondary small mb-4" style="height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            @ev.Description
+                        </p>
+
+                        <div class="mt-auto">
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                @* Giá tiền *@
+                                <div>
+                                    <span class="text-muted small d-block">Giá từ:</span>
+                                    <span class="fw-bold text-success fs-5">
+                                        @if (ev.Tickets != null && ev.Tickets.Any())
+                                        {
+                                            @ev.Tickets.Min(t => t.Price).ToString("N0")
+                                            @:đ
+                                        }
+                                        else
+                                        {
+                                            @:Liên hệ
+                                        }
+                                    </span>
+                                </div>
+
+                                @* Cụm nút hành động *@
+                                <div class="d-flex gap-2">
+                                    @* Nút Xem chi tiết: Luôn luôn hiển thị *@
+                                    <a asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id"
+                                           class="btn btn-outline-primary rounded-pill px-3 shadow-sm">
+                                        Xem chi tiết
+                                    </a>
+
+                                    @* Nút Đặt vé: Chỉ hiện khi Đang mở bán *@
+                                    @if (ev.Status == "Đang mở bán")
+                                    {
+                                        @if (User.Identity.IsAuthenticated)
+                                        {
+                                            <a asp-controller="Orders" asp-action="Create" asp-route-eventId="@ev.Id"
+                                                   class="btn btn-primary px-3 rounded-pill shadow">
+                                                Đặt ngay
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path"
+                                                   class="btn btn-secondary px-3 rounded-pill shadow-sm">
+                                                Đăng nhập
+                                            </a>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .transition-hover {
+        transition: all 0.3s ease;
+    }
+
+        .transition-hover:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+        }
+
+    .badge {
+        font-size: 0.85rem;
+        border-radius: 50px;
+    }
+
+    <style >
+        /* 1. Thay đổi container chứa filter */
+        #eventFilters {
+            display: flex;
+            flex-wrap: nowrap; /* Ép không xuống dòng */
+            overflow-x: auto; /* Cho phép lướt ngang */
+            width: 100%; /* Chiếm hết chiều ngang */
+            max-width: 600px; /* Giới hạn trên desktop */
+            -webkit-overflow-scrolling: touch; /* Mượt mà trên iPhone */
+        }
+
+        /* 2. Ẩn thanh cuộn ngang để giao diện sạch sẽ */
+        #eventFilters::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 3. Tinh chỉnh lại nút trên điện thoại */
+        .filter-btn {
+            white-space: nowrap; /* Chữ không bị xuống dòng */
+            flex: 0 0 auto; /* Không cho nút bị co lại */
+        }
+
+        /* 4. Tùy chỉnh thêm khoảng cách */
+        .btn-group {
+            padding: 4px !important;
+        }
+</style>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function filterEvents() {
+                var searchText = $('#txtSearch').val().toLowerCase();
+                var statusFilter = $('#eventFilters .btn-primary').attr('data-filter');
+
+                $('.event-card').each(function () {
+                    var name = $(this).attr('data-name') || "";
+                    var location = $(this).attr('data-location') || "";
+                    var status = $(this).attr('data-status');
+
+                    var matchSearch = name.includes(searchText) || location.includes(searchText);
+                    var matchStatus = (statusFilter === "all" || status === statusFilter);
+
+                    if (matchSearch && matchStatus) {
+                        $(this).stop().fadeIn(400);
+                    } else {
+                        $(this).stop().hide();
+                    }
+                });
+            }
+
+            // Xử lý Click nút Filter
+            $('.filter-btn').click(function () {
+                $('.filter-btn').removeClass('btn-primary text-white').addClass('btn-outline-primary');
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary text-white');
+                filterEvents();
+            });
+
+            // Xử lý gõ Search
+            $('#txtSearch').on('keyup', function () {
+                filterEvents();
+            });
+        });
+    </script>
+}

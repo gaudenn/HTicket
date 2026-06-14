@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Thanh toán qua mã VietQR";
+}
+
+<div class="text-center mt-5">
+    <h2>Quét mã để thanh toán</h2>
+    <p>Vui lòng dùng ứng dụng Ngân hàng để quét mã QR dưới đây</p>
+    
+    <div class="card d-inline-block p-4 shadow">
+        <img src="@ViewBag.QrUrl" alt="Mã VietQR" style="max-width: 350px;" />
+        
+        <div class="mt-3">
+            <h5>Số tiền: <strong class="text-danger">@ViewBag.Amount.ToString("N0") VNĐ</strong></h5>
+            <p>Nội dung: <strong>@ViewBag.OrderId</strong></p>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="/Orders/Index" class="btn btn-secondary">Quay lại</a>
+        <a href="@Url.Action("ConfirmPaymentSuccess", "Orders", new { description = ViewBag.OrderId })"
+               class="btn btn-success">
+            Tôi đã thanh toán thành công
+        </a>
+    </div>
+   
+</div>

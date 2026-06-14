@@ -1,0 +1,152 @@
+﻿@model HTicket.Models.Order
+
+@{
+    ViewData["Title"] = "Chỉnh sửa đơn hàng";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                @* Header của Card *@
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> Chỉnh sửa đơn hàng</h4>
+                    <small class="opacity-75">Mã đơn hàng: #@Model.Id</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        @* Thông tin Khách hàng (Chỉ xem) *@
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Khách hàng</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <select asp-for="CustomerId" class="form-control bg-light" asp-items="ViewBag.CustomerId" disabled></select>
+                            </div>
+                          
+                            <input type="hidden" asp-for="CustomerId" />
+                        </div>
+
+                        @* Thông tin Hạng vé *@
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Loại vé & Sự kiện</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-ticket-perforated"></i></span>
+                                <select asp-for="TicketId" class="form-select" asp-items="ViewBag.TicketId"></select>
+                            </div>
+                            <span asp-validation-for="TicketId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            @* Số lượng mua *@
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Số lượng</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-hash"></i></span>
+                                    <input asp-for="Quantity" class="form-control" type="number" min="1" id="inputQuantity" />
+                                </div>
+                                <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            </div>
+
+                            @* Tổng tiền *@
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Tổng tiền (VNĐ)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-currency-dollar"></i></span>
+                                    <input asp-for="TotalAmount" class="form-control fw-bold text-success" id="inputTotal" readonly />
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Thời gian đặt *@
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Ngày đặt vé</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                                <input asp-for="OrderDate" class="form-control bg-light" readonly />
+                            </div>
+                        </div>
+                        @* Trạng thái *@
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                @* Admin thì hiện Select để sửa *@
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-muted small text-uppercase">Trạng thái</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-info-circle"></i></span>
+                                        <select asp-for="Status" class="form-select fw-bold @(Model.Status == "Chờ thanh toán" ? "text-success" : "")">
+                                            <option value="Chờ thanh toán">Chờ thanh toán</option>
+                                            <option value="Thành công">Thành công</option>
+                                            <option value="Đã hủy">Đã hủy</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @* Người dùng thường: Hiện chữ để xem và thẻ ẩn để giữ giá trị khi POST *@
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-muted small text-uppercase">Trạng thái</label>
+                                    <p class="form-control-plaintext fw-bold ps-2">@Model.Status</p>
+                                    <input type="hidden" asp-for="Status" />
+                                </div>
+                            }
+                        }
+
+                        
+
+                            <hr class="my-4">
+
+                        @* Nút thao tác *@
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="text-decoration-none text-muted">
+                                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> Cập nhật đơn
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        $(document).ready(function () {
+            // Hàm lấy đơn giá từ chuỗi hiển thị "Loại vé (Giá: 500,000 đ)"
+            function getUnitPrice() {
+                let text = $("#TicketId option:selected").text();
+                // Tìm chuỗi số nằm sau chữ "Giá: "
+                let priceMatch = text.match(/Giá:\s*([0-9,.]+)/);
+                if (priceMatch) {
+                    // Loại bỏ dấu phẩy hoặc dấu chấm phân cách nghìn để chuyển thành số thuần
+                    return parseFloat(priceMatch[1].replace(/[,.]/g, ''));
+                }
+                return 0;
+            }
+
+            // Khi thay đổi loại vé hoặc số lượng thì tính lại tổng tiền
+            $('#inputQuantity, #TicketId').on('input change', function () {
+                let qty = $('#inputQuantity').val();
+                let price = getUnitPrice();
+                
+                if (qty > 0 && price > 0) {
+                    let total = qty * price;
+                    // Cập nhật vào ô Tổng tiền
+                    $('#inputTotal').val(total.toFixed(2));
+                }
+            });
+        });
+    </script>
+}

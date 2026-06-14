@@ -1,0 +1,127 @@
+﻿@model HTicket.Models.Event
+
+@{
+    ViewData["Title"] = Model.Name + " - Chi tiết sự kiện";
+}
+
+<div class="container mt-5 mb-5">
+    @* Nút quay lại *@
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <a class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" asp-controller="Home" asp-action="Index">Trang chủ</a>
+            
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        @* Cột Trái: Ảnh và Mô tả *@
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm overflow-hidden rounded-4">
+                @* Ảnh lấy từ mạng dựa trên ID sự kiện *@
+                <img src="https://picsum.photos/seed/@(Model.Id + 88)/1200/600" class="img-fluid" alt="@Model.Name" style="max-height: 450px; object-fit: cover;">
+                
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="fw-bold text-primary mb-0">@Model.Name</h1>
+                        @{
+                            var badgeClass = Model.Status == "Đang mở bán" ? "bg-success" : (Model.Status == "Sắp diễn ra" ? "bg-warning text-dark" : "bg-secondary");
+                        }
+                        <span class="badge @badgeClass px-3 py-2 rounded-pill">@Model.Status</span>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-calendar-check text-primary me-2"></i>
+                            <strong>Thời gian:</strong> @Model.EventDate?.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-geo-alt text-danger me-2"></i>
+                            <strong>Địa điểm:</strong> @Model.Location
+                        </div>
+                        <div class="col-md-6">
+                            <i class="bi bi-tag text-info me-2"></i>
+                            <strong>Thể loại:</strong> @Model.Category
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold border-start border-primary border-4 ps-2 mb-3">Giới thiệu sự kiện</h5>
+                    <p class="text-secondary lh-lg" style="white-space: pre-line;">
+                        @Model.Description
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        @* Cột Phải: Danh sách vé và Đặt vé *@
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-ticket-perforated me-2"></i>Danh sách vé</h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.Tickets != null && Model.Tickets.Any())
+                    {
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            <div class="ticket-item p-3 mb-3 border rounded-3 transition-hover shadow-sm">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark">@ticket.TicketType</span>
+                                    <span class="text-success fw-bold fs-5">@ticket.Price.ToString("N0") đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <small class="text-muted">
+                                        Còn lại: <span class="badge bg-light text-dark border">@ticket.RemainingQuantity</span>
+                                    </small>
+                                    
+                                    @if (Model.Status == "Đang mở bán" && ticket.RemainingQuantity > 0)
+                                    {
+                                        @if (User.Identity.IsAuthenticated)
+                                        {
+                                           
+                                            <a asp-controller="Orders"
+                                                   asp-action="Create"
+                                                   asp-route-eventId="@Model.Id"
+                                                   class="btn btn-primary btn-sm rounded-pill px-4 shadow">
+                                                Đặt ngay
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary btn-sm rounded-pill">
+                                                Đăng nhập để đặt
+                                            </a>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-info-circle fs-1 text-muted"></i>
+                            <p class="mt-2">Thông tin vé đang được cập nhật...</p>
+                        </div>
+                    }
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .transition-hover {
+        transition: all 0.2s ease;
+    }
+
+        .transition-hover:hover {
+            border-color: #0d6efd !important;
+            background-color: #f8f9fa;
+            transform: scale(1.02);
+        }
+
+    .sticky-top {
+        z-index: 10;
+    }
+</style>

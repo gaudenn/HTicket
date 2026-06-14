@@ -1,0 +1,144 @@
+﻿@model HTicket.Models.Order
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-dark text-white p-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-cart-check me-2"></i>Xác nhận đặt vé</h5>
+        </div>
+        
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post" id="multiOrderForm">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-secondary small uppercase">Khách hàng đặt</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" class="form-control bg-light" value="@ViewBag.CurrentCustomerName" readonly />
+                        </div>
+                        <input type="hidden" name="CustomerId" value="@ViewBag.CurrentCustomerId" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-secondary small uppercase">1. Chọn sự kiện</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                            <select id="eventSelect" name="EventId" class="form-select border-primary shadow-sm" asp-items="ViewBag.EventId">
+                                <option value="">-- Chọn sự kiện để xem hạng vé --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ticketContainer" style="display:none;" class="mt-4">
+                    <label class="form-label fw-bold text-secondary small uppercase mb-3">2. Chọn hạng vé và số lượng</label>
+                    <div class="table-responsive shadow-sm rounded">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 80px;">Chọn</th>
+                                    <th>Hạng vé</th>
+                                    <th>Giá niêm yết</th>
+                                    <th>Tình trạng</th>
+                                    <th style="width: 180px;">Số lượng mua</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border mt-4 d-flex justify-content-between align-items-center shadow-sm py-3">
+                    <span class="fw-bold fs-5 text-dark">Tổng tiền thanh toán:</span>
+                    <h3 class="mb-0 text-primary fw-bolder" id="grandTotal">0 VNĐ</h3>
+                </div>
+
+                <div class="mt-4 d-flex gap-3 justify-content-end">
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                        Hủy bỏ
+                    </a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow rounded-pill">
+                        <i class="bi bi-check-circle me-2"></i>XÁC NHẬN ĐẶT VÉ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+        $('#eventSelect').change(function () {
+        const eventId = $(this).val();
+        if (eventId) {
+        $.getJSON('/Orders/GetTicketsByEvent', { eventId: eventId }, function (data) {
+        let html = '';
+        $.each(data, function (i, ticket) {
+        html += `
+        <tr>
+        <td class="text-center">
+        <input type="checkbox" class="form-check-input ticket-check" style="width:1.5rem; height:1.5rem;" value="${ticket.id}">
+        </td>
+        <td class="fw-bold text-dark">${ticket.ticketType}</td>
+        <td class="text-success fw-bold">${ticket.price.toLocaleString('vi-VN')} đ</td>
+        <td><span class="badge ${ticket.remainingQuantity > 0 ? 'bg-info text-dark' : 'bg-danger'}">Còn ${ticket.remainingQuantity}</span></td>
+        <td>
+        <input type="number" name="quantities[${ticket.id}]"
+        class="form-control qty-input shadow-sm border-primary"
+        value="0" min="0" max="${ticket.remainingQuantity}"
+        data-price="${ticket.price}" disabled>
+        </td>
+        </tr>`;
+        });
+        $('#ticketTableBody').html(html);
+        $('#ticketContainer').hide().fadeIn();
+        updateGrandTotal();
+        });
+        } else {
+        $('#ticketContainer').fadeOut();
+        }
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventIdFromUrl = urlParams.get('eventId');
+        if (eventIdFromUrl) {
+        $('#eventSelect').val(eventIdFromUrl).trigger('change');
+        }
+
+        $(document).on('change', '.ticket-check', function() {
+        const row = $(this).closest('tr');
+        const qtyInput = row.find('.qty-input');
+        if ($(this).is(':checked')) {
+        qtyInput.prop('disabled', false).val(1).focus();
+        } else {
+        qtyInput.prop('disabled', true).val(0);
+        }
+        updateGrandTotal();
+        });
+
+        $(document).on('input change', '.qty-input', function() {
+        const max = parseInt($(this).attr('max'));
+        let val = parseInt($(this).val()) || 0;
+        if (val > max) {
+        alert("Rất tiếc, chỉ còn " + max + " vé!");
+        $(this).val(max);
+        }
+        updateGrandTotal();
+        });
+
+        function updateGrandTotal() {
+        let total = 0;
+        $('.qty-input').each(function() {
+        if (!$(this).prop('disabled')) {
+        const price = parseFloat($(this).data('price')) || 0;
+        const qty = parseInt($(this).val()) || 0;
+        total += price * qty;
+        }
+        });
+        $('#grandTotal').text(total.toLocaleString('vi-VN') + ' VNĐ');
+        }
+        });
+    </script>
+}

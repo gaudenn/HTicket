@@ -1,0 +1,49 @@
+﻿@model HTicket.Models.Customer
+
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form asp-action="Profile" method="post" class="card shadow border-0">
+                <div class="card-header bg-warning py-3">
+                    <h5 class="mb-0 fw-bold text-dark text-center">Cập nhật thông tin khách hàng</h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    @if (TempData["Message"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["Message"]</div>
+                    }
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="Role" />
+                    <input type="hidden" asp-for="Password" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Họ và Tên khách hàng</label>
+                        <input asp-for="FullName" class="form-control py-2" placeholder="Nhập họ tên..." />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Địa chỉ Email</label>
+                        <input asp-for="Email" class="form-control py-2 bg-light" readonly />
+                        <small class="text-muted italic">Email được dùng làm tài khoản đăng nhập.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số điện thoại liên hệ</label>
+                        <input asp-for="PhoneNumber" class="form-control py-2" placeholder="Nhập số điện thoại..." />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary px-4">Quay lại</a>
+                        <button type="submit" class="btn btn-warning fw-bold px-4">Lưu thay đổi</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

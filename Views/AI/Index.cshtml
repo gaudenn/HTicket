@@ -1,0 +1,119 @@
+﻿
+@model IEnumerable<IGrouping<string, HTicket.Models.DemandForecast>>
+
+<style>
+    .ai-card { border-radius: 15px; overflow: hidden; transition: transform 0.2s; background: #fff; border: none; }
+    .ai-card:hover { transform: translateY(-5px); }
+    .status-badge { padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 0.75rem; min-width: 110px; text-align: center; display: inline-block; }
+    .recommendation-box { background: #fdfcfe; border-radius: 10px; padding: 12px; border-left: 4px solid #0d6efd; color: #495057; }
+    .prediction-highlight { font-size: 1.2rem; }
+</style>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-cpu-fill text-primary"></i> Trình quản lý Dự báo AI
+            </h2>
+        </div>
+        <a asp-action="Index" class="btn btn-primary shadow-sm rounded-pill px-4 py-2">
+    <i class="bi bi-arrow-clockwise"></i> Cập nhật dữ liệu
+</a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <form asp-action="Index" method="get" class="d-flex shadow-sm rounded-pill overflow-hidden border bg-white">
+                <input type="text" name="searchString" class="form-control border-0 px-4" 
+                       placeholder="Tìm sự kiện..." value="@ViewData["CurrentFilter"]" />
+                <button type="submit" class="btn btn-primary px-4 border-0">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-light border shadow-sm text-center py-5">
+            <i class="bi bi-inbox text-muted fs-1 d-block mb-3"></i>
+            <span class="text-muted">Không tìm thấy dữ liệu phân tích nào.</span>
+        </div>
+    }
+
+    @foreach (var eventGroup in Model)
+    {
+        <div class="card ai-card shadow-sm mb-5 border">
+            <div class="card-header bg-white border-bottom py-3 px-4">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-subtle p-2 rounded-3 me-3 text-primary">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <h5 class="mb-0 fw-bold">Sự kiện: @eventGroup.Key</h5>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-secondary">
+                                <th class="ps-4">Hạng vé</th>
+                                <th class="text-center">Tốc độ (Vé/Ngày)</th>
+                                <th class="text-center">Thời gian cháy vé</th>
+                                <th class="text-center">Phân loại AI</th>
+                                <th class="pe-4">Khuyến nghị chiến lược</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in eventGroup)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">@item.TicketType</div>
+                                        <div class="text-muted small">Dữ liệu thời gian thực</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fs-5 fw-bold text-primary">@item.SalesVelocity</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="prediction-highlight fw-bold">
+                                            @if (item.DemandLevel == "HẾT VÉ") {
+                                                <span class="badge bg-danger-subtle text-danger">ĐÃ HẾT</span>
+                                            } else if (item.SalesVelocity <= 0) {
+                                                <span class="text-muted small italic">--</span>
+                                            } else {
+                                                <span class="@(item.PredictedDaysUntilSoldOut <= 3 ? "text-danger" : "text-dark")">
+                                                    ~@item.PredictedDaysUntilSoldOut <small class="text-muted">ngày</small>
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @{
+                                            var badgeClass = item.DemandLevel switch {
+                                                "RẤT CAO" => "bg-danger",
+                                                "CAO" => "bg-warning text-dark",
+                                                "ỔN ĐỊNH" => "bg-success",
+                                                "RỦI RO" => "bg-dark text-white",
+                                                "HẾT VÉ" => "bg-secondary",
+                                                _ => "bg-info"
+                                            };
+                                        }
+                                        <span class="status-badge @badgeClass shadow-sm text-uppercase">
+                                            @item.DemandLevel
+                                        </span>
+                                    </td>
+                                    <td class="pe-4 py-3" style="max-width: 350px;">
+                                        <div class="recommendation-box small shadow-sm">
+                                            <i class="bi bi-robot me-1 text-primary"></i> @item.Recommendation
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

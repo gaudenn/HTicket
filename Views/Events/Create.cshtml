@@ -1,0 +1,75 @@
+﻿@model HTicket.Models.Event
+
+
+@{
+    ViewData["Title"] = "Tạo sự kiện mới";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="bi bi-calendar-plus"></i> Thêm sự kiện mới</h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Name" class="form-label fw-bold">Tên sự kiện</label>
+                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: Đại nhạc hội Mùa Hè..." />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="EventDate" class="form-label fw-bold">Thời gian tổ chức</label>
+                        <input asp-for="EventDate" class="form-control" />
+                        <span asp-validation-for="EventDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Location" class="form-label fw-bold">Địa điểm</label>
+                        <input asp-for="Location" class="form-control" placeholder="Sân vận động, Nhà hát.../ Hà Nội, HCM..." />
+                        <span asp-validation-for="Location" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Category" class="form-label fw-bold">Danh mục</label>
+                        <select asp-for="Category" class="form-select border-success">
+                            <option value="">-- Chọn danh mục --</option>
+                            <option value="Nhạc">Âm nhạc / Concert</option>
+                            <option value="Sân khấu">Kịch / Sân khấu</option>
+                            <option value="Thể thao">Thể thao</option>
+                            <option value="Hội thảo">Hội thảo / Giáo dục</option>
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Status" class="form-label fw-bold">Trạng thái ban đầu</label>
+                        <select asp-for="Status" class="form-select border-success">
+                            <option value="Đang mở bán">🎟️ Đang mở bán</option>
+                            <option value="Sắp diễn ra">🔥 Sắp diễn ra</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12 mb-4">
+                        <label asp-for="Description" class="form-label fw-bold">Mô tả sự kiện</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Nhập nội dung chi tiết về sự kiện..."></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 border-top pt-3">
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="bi bi-check-lg"></i> Xác nhận tạo
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy bỏ</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

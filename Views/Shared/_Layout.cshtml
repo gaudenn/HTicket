@@ -1,0 +1,245 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản Lý Bán Vé</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <!-- Thêm FontAwesome để hiện icon Chatbot -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+    @Html.AntiForgeryToken()
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">H-TICKET</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">🏠 Trang chủ</a>
+                        </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        ⚙️ Quản lý hệ thống
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                        <li><a class="dropdown-item" asp-controller="Events" asp-action="Index">📅 Sự kiện</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Tickets" asp-action="Index">🎟️ Loại Vé</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Customers" asp-action="Index">👥 Khách hàng</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Orders" asp-action="Index">🛒 Đơn hàng</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Statistics" asp-action="Index">📊 Thống kê</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item fw-bold text-primary" asp-controller="AI" asp-action="Index">📈 AI Dự báo nhu cầu</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            else if (User.IsInRole("Customer"))
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Orders" asp-action="Create">🎟️ Đặt vé</a></li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Orders" asp-action="Index">🛒 Đơn hàng của tôi</a></li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">👥 Thông tin cá nhân</a></li>
+                            }
+                        }
+                    </ul>
+
+                    <div class="navbar-nav align-items-center">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <span class="nav-link text-dark me-2">Xin chào, <b>@User.Identity.Name</b></span>
+                            <a class="btn btn-outline-danger rounded-pill" asp-controller="Account" asp-action="Logout" onclick="sessionStorage.clear();">Đăng xuất</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                            <a class="btn btn-primary btn-sm rounded-pill px-4" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        
+    </header>
+
+    <!-- NỘI DUNG CHÍNH CỦA TRANG WEB -->
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- GIAO DIỆN CHATBOT (FIXED) -->
+    <div id="chat-wrapper" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+        <button id="chat-toggle" class="btn btn-primary rounded-circle shadow-lg" style="width: 60px; height: 60px;">
+            <i class="fas fa-comment-dots" style="font-size: 24px;"></i>
+        </button>
+
+        <div id="chat-box" class="card d-none shadow-lg" style="position: absolute; bottom: 75px; right: 0; width: 360px; height: 500px; border-radius: 15px; border: none; overflow: hidden;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center" style="padding: 15px;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-robot me-2"></i>
+                    <span class="fw-bold">H-Ticket AI Assistant</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" id="chat-close"></button>
+            </div>
+            <div id="chat-content" class="card-body" style="overflow-y: auto; background: #f0f2f5; padding: 15px;">
+                <div class="bot-msg-wrapper">
+                    <div class="bot-msg">Chào bạn! Mình có thể giúp gì về vé sự kiện ạ?</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control" placeholder="Nhập tin nhắn..." autocomplete="off">
+                    <button id="btnSend" class="btn btn-primary" type="button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+            .chat-input-area {
+                background: #fff;
+                padding: 12px;
+                border-top: 1px solid #eee;
+            }
+
+            #chatInput {
+                border: 1px solid #dee2e6;
+                border-right: none;
+                border-radius: 20px 0 0 20px !important;
+                box-shadow: none !important;
+                font-size: 14px;
+            }
+
+            #btnSend {
+                border-radius: 0 20px 20px 0 !important;
+                padding: 0 18px;
+            }
+
+            .user-msg-wrapper {
+                text-align: right;
+                margin-bottom: 15px;
+            }
+
+            .user-msg {
+                background-color: #0084ff;
+                color: #fff;
+                padding: 10px 14px;
+                border-radius: 18px 18px 2px 18px;
+                display: inline-block;
+                max-width: 80%;
+                word-wrap: break-word;
+                font-size: 14px;
+            }
+
+            .bot-msg-wrapper {
+                text-align: left;
+                margin-bottom: 15px;
+            }
+
+            .bot-msg {
+                background-color: #e4e6eb;
+                color: #050505;
+                padding: 10px 14px;
+                border-radius: 18px 18px 18px 2px;
+                display: inline-block;
+                max-width: 80%;
+                word-wrap: break-word;
+                font-size: 14px;
+                white-space: pre-line;
+            }
+
+                .bot-msg b {
+                    color: #007bff;
+                    font-weight: bold;
+                }
+    </style>
+
+    <!-- NẠP THƯ VIỆN TRƯỚC -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- NẠP SCRIPT CỦA TỪNG TRANG -->
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- MÃ ĐIỀU KHIỂN CHATBOT -->
+    <script>
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatBox = document.getElementById('chat-box');
+        const chatInput = document.getElementById('chatInput');
+        const btnSend = document.getElementById('btnSend');
+        const chatContent = document.getElementById('chat-content');
+
+        chatToggle.onclick = () => chatBox.classList.toggle('d-none');
+        document.getElementById('chat-close').onclick = () => chatBox.classList.add('d-none');
+
+        function saveToSession(sender, text) {
+        let history = JSON.parse(sessionStorage.getItem('chat_history')) || [];
+        history.push({ sender, text });
+        sessionStorage.setItem('chat_history', JSON.stringify(history));
+        }
+
+        function renderMessage(sender, text) {
+        const div = document.createElement('div');
+        div.className = sender === 'user' ? 'user-msg-wrapper' : 'bot-msg-wrapper';
+        if (sender === 'user') {
+        div.innerHTML = `<div class="user-msg"></div>`;
+        div.querySelector('.user-msg').textContent = text;
+        } else {
+        div.innerHTML = `<div class="bot-msg">${text}</div>`;
+        }
+        chatContent.appendChild(div);
+        chatContent.scrollTop = chatContent.scrollHeight;
+        }
+
+        window.addEventListener('load', () => {
+        let history = JSON.parse(sessionStorage.getItem('chat_history'));
+        if (history) {
+        history.forEach(item => renderMessage(item.sender, item.text));
+        }
+        });
+
+        async function sendMessage() {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+
+        renderMessage('user', msg);
+        saveToSession('user', msg);
+        chatInput.value = '';
+
+        try {
+        const response = await fetch('/Chatbot/SendMessage', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+        },
+        body: JSON.stringify({ message: msg })
+        });
+        const data = await response.json();
+        renderMessage('bot', data.reply);
+        saveToSession('bot', data.reply);
+        } catch (error) {
+        renderMessage('bot', '⚠️ Lỗi kết nối máy chủ.');
+        }
+        }
+
+        btnSend.onclick = sendMessage;
+        chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    </script></body>
+</html>

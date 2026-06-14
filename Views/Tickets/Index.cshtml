@@ -1,0 +1,130 @@
+﻿@model IEnumerable<IGrouping<HTicket.Models.Event, HTicket.Models.Ticket>>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary"><i class="bi bi-ticket-perforated"></i> Quản lý phân phối vé</h2>
+        <a asp-action="Create" class="btn btn-success rounded-pill px-4">Phát hành vé mới</a>
+    </div>
+
+    <div class="card shadow-sm border-0 p-3 bg-light mb-5">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-bold text-secondary small">TRẠNG THÁI SỰ KIỆN</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-filter-circle"></i></span>
+                    <select name="statusFilter" class="form-select">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="Đang mở bán" selected='@(Context.Request.Query["statusFilter"] == "Đang mở bán")'>Đang mở bán</option>
+                        <option value="Sắp diễn ra" selected='@(Context.Request.Query["statusFilter"] == "Sắp diễn ra")'>Sắp diễn ra</option>
+                        <option value="Đã kết thúc" selected='@(Context.Request.Query["statusFilter"] == "Đã kết thúc")'>Đã kết thúc</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary small">TÌNH TRẠNG KHO VÉ</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-box-seam"></i></span>
+                    <select name="stockFilter" class="form-select">
+                        <option value="">-- Tất cả kho --</option>
+                        <option value="low" selected='@(Context.Request.Query["stockFilter"] == "low")'>⚠️ Sắp hết vé (≤ 10)</option>
+                        <option value="out" selected='@(Context.Request.Query["stockFilter"] == "out")'>🚫 Đã hết vé (Sold out)</option>
+                        <option value="in" selected='@(Context.Request.Query["stockFilter"] == "in")'>✅ Còn nhiều vé (> 10)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-dark w-100 fw-bold">Lọc ngay</button>
+                <a asp-action="Index" class="btn btn-outline-secondary px-3" title="Làm mới bộ lọc">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">Không tìm thấy loại vé nào khớp với bộ lọc.</p>
+        </div>
+    }
+
+    @foreach (var group in Model)
+    {
+        <div class="card mb-5 shadow-sm border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="m-0 fw-bold"><i class="bi bi-stars text-warning"></i> Sự kiện: @group.Key.Name</h5>
+                <span class="badge bg-light text-dark">@group.Count() loại vé</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Loại vé</th>
+                            <th>Giá niêm yết</th>
+                            <th>Tình trạng kho (Còn lại/Tổng)</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in group)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold @(item.TicketType == "VIP" ? "text-danger" : "text-primary")">@item.TicketType</td>
+                                <td class="fw-bold">@item.Price.ToString("N0") VNĐ</td>
+                                <td style="width: 35%;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @{
+                                            var percent = (item.RemainingQuantity * 100) / (item.TotalQuantity > 0 ? item.TotalQuantity : 1);
+                                            var progressColor = percent < 10 ? "bg-danger" : (percent < 30 ? "bg-warning" : "bg-success");
+                                        }
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar @progressColor" style="width: @percent%"></div>
+                                        </div>
+                                        <span class="small fw-bold">@item.RemainingQuantity/@item.TotalQuantity</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.RemainingQuantity == 0)
+                                    {
+                                        <span class="badge bg-danger">Hết vé</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Đang bán</span>
+                                    }
+                                </td>
+            
+                                @* SỬA TẠI ĐÂY: Bỏ vòng lặp thừa, dùng trực tiếp biến item *@
+                                <td class="text-center">
+                                    @if (group.Key.Status == "Đã kết thúc" || group.Key.Status == "Sắp diễn ra")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary disabled"
+                                                style="cursor: not-allowed; opacity: 0.5;"
+                                                title="Không thể sửa khi sự kiện @group.Key.Status">
+                                            Sửa
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-secondary disabled"
+                                                style="cursor: not-allowed; opacity: 0.5;"
+                                                title="Không thể xóa khi sự kiện @group.Key.Status">
+                                            Xóa
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Sửa</a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Xóa</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

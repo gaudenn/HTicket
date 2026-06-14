@@ -1,0 +1,59 @@
+﻿@model HTicket.Models.Event
+
+@{
+    ViewData["Title"] = "Xóa sự kiện";
+}
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-danger text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-trash-alt me-2"></i> Xác nhận xóa sự kiện</h5>
+        </div>
+        
+        <div class="card-body p-4">
+            <h4 class="text-danger">Bạn có chắc chắn muốn xóa sự kiện này không?</h4>
+            <p class="text-muted">Hành động này không thể hoàn tác. Dữ liệu liên quan sẽ bị ảnh hưởng.</p>
+            <hr />
+
+            <dl class="row mt-4">
+                <dt class="col-sm-3 fw-bold">Tên sự kiện</dt>
+                <dd class="col-sm-9">@Model.Name</dd>
+
+                <dt class="col-sm-3 fw-bold">Mô tả</dt>
+                <dd class="col-sm-9">@Model.Description</dd>
+
+                <dt class="col-sm-3 fw-bold">Ngày diễn ra</dt>
+                @* Sửa lỗi: Sử dụng .ToString() thay vì .DateTime() *@
+                <dd class="col-sm-9">@Model.EventDate.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                <dt class="col-sm-3 fw-bold">Địa điểm</dt>
+                <dd class="col-sm-9">@Model.Location</dd>
+
+                <dt class="col-sm-3 fw-bold">Danh mục</dt>
+                <dd class="col-sm-9">@Model.Category</dd>
+
+                <dt class="col-sm-3 fw-bold">Trạng thái</dt>
+                <dd class="col-sm-9">
+                    <span class="badge @(Model.Status == "Đang mở bán" ? "bg-success" : "bg-secondary")">
+                        @Model.Status
+                    </span>
+                </dd>
+            </dl>
+
+            @* Lưu ý: Nếu hàm trong Controller của bạn tên là Delete (HttpPost)
+               thì để asp-action="Delete". Nếu tên là DeleteConfirmed thì sửa lại tương ứng.
+            *@
+            <form asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" class="mt-4">
+                <input type="hidden" asp-for="Id" />
+                
+                <button asp-action="Delete" class="btn btn-danger rounded-pill px-4 me-2">
+                    <i class="fas fa-check me-1"></i> Xác nhận Xóa
+                </button>
+                
+                <a asp-action="Index" class="btn btn-light rounded-pill px-4 border">
+                    <i class="fas fa-undo me-1"></i> Quay lại danh sách
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,90 @@
+﻿@model HTicket.Models.Ticket
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Tinh chỉnh để Select2 khớp với giao diện hiện tại của bạn */
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        padding-left: 12px !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px !important;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">🎟️ Phát hành vé mới</h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="EventId" class="form-label fw-bold">Thuộc sự kiện</label>
+                        <select id="eventSelector" asp-for="EventId" class="form-select">
+                            <option value="">-- Gõ để tìm kiếm sự kiện --</option>
+                            @if (ViewBag.Events != null)
+                            {
+                                foreach (var item in ViewBag.Events)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Loại vé</label>
+                        <select name="TicketType" class="form-select border-primary">
+                            <option value="Thường">🎫 Vé Thường</option>
+                            <option value="VIP">🌟 Vé VIP</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Price" class="form-label fw-bold">Giá vé (VNĐ)</label>
+                        <input asp-for="Price" class="form-control" type="number" placeholder="Ví dụ: 200000" />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="TotalQuantity" class="form-label fw-bold">Tổng số lượng</label>
+                        <input asp-for="TotalQuantity" class="form-control" type="number" />
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="RemainingQuantity" class="form-label fw-bold">Số lượng khả dụng</label>
+                        <input asp-for="RemainingQuantity" class="form-control" type="number" />
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary px-4">Xác nhận tạo</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Quay lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+        $('#eventSelector').select2({
+        placeholder: "-- Chọn sự kiện --",
+        allowClear: true,
+        width: '100%'
+        });
+        });
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

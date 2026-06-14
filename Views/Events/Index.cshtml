@@ -1,0 +1,78 @@
+﻿@model IEnumerable<HTicket.Models.Event>
+
+<div class="container shadow p-4 mt-4 bg-white rounded">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-4">
+            <h2 class="m-0">📅 Quản lý Sự kiện</h2>
+        </div>
+
+        <div class="col-md-8 d-flex justify-content-end align-items-center gap-3">
+            <form asp-action="Index" method="get" class="d-inline-flex align-items-center gap-2">
+                <label class="fw-bold text-muted mb-0" style="white-space: nowrap;">Lọc theo:</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    @foreach (var status in new[] { "Đang mở bán", "Sắp diễn ra", "Đã kết thúc" })
+                    {
+                        if (Context.Request.Query["status"] == status)
+                        {
+                            <option value="@status" selected>@status</option>
+                        }
+                        else
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    }
+                </select>
+            </form>
+            
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Tạo sự kiện mới
+            </a>
+        </div>
+    </div>
+
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.Name)</th>
+                <th>@Html.DisplayNameFor(model => model.EventDate)</th>
+                <th>@Html.DisplayNameFor(model => model.Location)</th>
+                <th>@Html.DisplayNameFor(model => model.Category)</th>
+                <th>Trạng thái</th>
+                <th class="text-center">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td><strong>@item.Name</strong></td>
+                    <td>@item.EventDate?.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@item.Location</td>
+                    <td><span class="badge bg-info">@item.Category</span></td>
+                    <td>
+                        @{
+                            var badgeClass = item.Status switch
+                            {
+                                "Đang mở bán" => "bg-success",
+                                "Sắp diễn ra" => "bg-info",
+                                "Đang diễn ra" => "bg-primary",
+                                "Đã kết thúc" => "bg-secondary",
+                                _ => "bg-dark"
+                            };
+                        }
+                        <span class="badge @badgeClass">@item.Status</span>
+                    </td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-pencil-square"></i> Sửa
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Xóa
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

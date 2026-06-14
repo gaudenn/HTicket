@@ -1,0 +1,57 @@
+﻿@model HTicket.Models.Customer
+
+
+@{
+    ViewData["Title"] = "Đăng ký thành viên";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">Đăng Ký Tài Khoản</h4>
+                    <small>Tham gia hệ thống đặt vé H-TICKET</small>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label">Họ và tên</label>
+                            <input asp-for="FullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Địa chỉ Email</label>
+                            <input asp-for="Email" class="form-control" placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                            
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="09xx xxx xxx" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                            XÁC NHẬN ĐĂNG KÝ
+                        </button>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3 bg-light">
+                    <span>Đã có tài khoản? </span>
+                    <a asp-action="Login" class="text-decoration-none fw-bold">Đăng nhập ngay</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

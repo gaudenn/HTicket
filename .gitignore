@@ -1,0 +1,11 @@
+# .NET Core
+.vs/
+.vscode/
+bin/
+obj/
+.vs/
+HTicket.csproj.user/
+ScaffoldingReadMe.txt/
+*.user
+*.userosscache
+*.sln.docstates

@@ -1,0 +1,109 @@
+﻿@model HTicket.Models.Ticket
+
+
+
+@{
+    ViewData["Title"] = "Cập nhật vé";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark p-3">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin vé</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="EventId" class="form-label fw-bold">Sự kiện</label>
+                                <select asp-for="EventId" class="form-select bg-light" asp-items="ViewBag.EventId" readonly>
+                                </select>
+                                <small class="text-muted">Lưu ý: Không nên thay đổi sự kiện sau khi đã phát hành vé.</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Hạng vé</label>
+                                <select name="TicketType" class="form-select border-warning">
+                                    <option value="Thường" selected="@(Model.TicketType == "Thường")">🎫 Vé Thường</option>
+                                    <option value="VIP" selected="@(Model.TicketType == "VIP")">🌟 Vé VIP</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Price" class="form-label fw-bold">Giá vé (VNĐ)</label>
+                                <div class="input-group">
+                                    <input asp-for="Price" class="form-control border-warning" type="number" />
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                                <span asp-validation-for="Price" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TotalQuantity" class="form-label fw-bold">Tổng số lượng</label>
+                                <input asp-for="TotalQuantity" class="form-control" type="number" />
+                                <span asp-validation-for="TotalQuantity" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="RemainingQuantity" class="form-label fw-bold">Số lượng còn lại</label>
+                                <input asp-for="RemainingQuantity" class="form-control" type="number" />
+                                <span asp-validation-for="RemainingQuantity" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4 border-top pt-3">
+                            <button type="submit" class="btn btn-warning px-4 fw-bold">
+                                <i class="bi bi-save"></i> Cập nhật
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Hủy bỏ</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            @if(Model.RemainingQuantity < 5)
+            {
+                <div class="alert alert-danger mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                    <strong>Cảnh báo:</strong> Loại vé này sắp hết! Bạn có thể tăng "Tổng số lượng" để tiếp tục bán.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+        // Lắng nghe sự kiện khi người dùng nhập vào 1 trong 2 ô số lượng
+        $('#RemainingQuantity, #TotalQuantity').on('input change', function () {
+        // Lấy giá trị từ các ô input
+        let total = parseInt($('#TotalQuantity').val()) || 0;
+        let remaining = parseInt($('#RemainingQuantity').val()) || 0;
+
+        // Kiểm tra logic: Số lượng còn lại không được vượt quá Tổng số lượng
+        if (remaining > total) {
+        alert('Lỗi: Số lượng còn lại (' + remaining + ') không thể lớn hơn Tổng số lượng (' + total + ')!');
+                    
+        // Tự động điều chỉnh số lượng còn lại về bằng tổng để sửa lỗi cho người dùng
+        $('#RemainingQuantity').val(total);
+        }
+                
+        // Ngăn chặn nhập số âm
+        if (total < 0) $('#TotalQuantity').val(0);
+        if (remaining < 0) $('#RemainingQuantity').val(0);
+        });
+        });
+    </script>
+}

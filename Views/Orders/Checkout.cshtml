@@ -1,0 +1,67 @@
+﻿@model IEnumerable<HTicket.Models.Order>
+
+<div class="container mt-5">
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Thanh toán đơn hàng - Khách hàng: @Model.FirstOrDefault()?.Customer?.FullName</h4>
+        </div>
+        <form asp-action="ConfirmPayment" method="post">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">Chọn</th>
+                            <th>Sự kiện & Hạng vé</th>
+                            <th>Giá gốc</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    
+                                    <input type="checkbox" name="selectedOrderIds" value="@item.Id"
+                                           class="form-check-input ticket-checkbox"
+                                           data-amount="@item.TotalAmount" checked />
+                                </td>
+                                <td>
+                                    <strong>@item.Ticket?.Event?.Name</strong> <br />
+                                    <small class="text-muted">@item.Ticket?.TicketType</small>
+                                </td>
+                                <td>@item.Ticket?.Price.ToString("N0") đ</td>
+                                <td class="text-end fw-bold">@item.TotalAmount.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                <div class="fs-4">Tổng cộng: <span id="displayTotal" class="text-danger fw-bold">0</span> <span class="text-danger fw-bold">VNĐ</span></div>
+                <button type="submit" class="btn btn-success btn-lg px-5 shadow">HOÀN TẤT THANH TOÁN</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateGrandTotal() {
+            let total = 0;
+           
+            document.querySelectorAll('.ticket-checkbox:checked').forEach(function(cb) {
+                total += parseFloat(cb.getAttribute('data-amount'));
+            });
+            // Hiển thị định dạng tiền tệ Việt Nam
+            document.getElementById('displayTotal').innerText = total.toLocaleString('vi-VN');
+        }
+
+        // Gán sự kiện thay đổi cho các checkbox
+        document.querySelectorAll('.ticket-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateGrandTotal);
+        });
+
+        window.onload = updateGrandTotal;
+    </script>
+}

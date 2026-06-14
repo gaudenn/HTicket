@@ -1,0 +1,55 @@
+﻿@model HTicket.Models.Ticket
+
+@{
+    ViewData["Title"] = "Xóa loại vé";
+}
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-danger text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i> Xác nhận xóa loại vé</h5>
+        </div>
+        
+        <div class="card-body p-4">
+            <h4 class="text-danger">Bạn có chắc chắn muốn xóa loại vé này không?</h4>
+            <p class="text-muted">Hành động này sẽ gỡ bỏ loại vé khỏi sự kiện. Các đơn hàng liên quan có thể bị ảnh hưởng.</p>
+            <hr />
+
+            <dl class="row mt-4">
+                <dt class="col-sm-3 fw-bold">Sự kiện</dt>
+                <dd class="col-sm-9 text-primary fw-bold">@Model.Event?.Name</dd>
+
+                <dt class="col-sm-3 fw-bold">Loại vé</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info text-dark">@Model.TicketType</span>
+                </dd>
+
+                <dt class="col-sm-3 fw-bold">Giá vé</dt>
+                <dd class="col-sm-9 text-success fw-bold">@Model.Price.ToString("N0") VNĐ</dd>
+
+                <dt class="col-sm-3 fw-bold">Tổng số lượng</dt>
+                <dd class="col-sm-9">@Model.TotalQuantity</dd>
+
+                <dt class="col-sm-3 fw-bold">Số lượng còn lại</dt>
+                <dd class="col-sm-9">
+                    <span class="text-@(Model.RemainingQuantity > 0 ? "success" : "danger")">
+                        @Model.RemainingQuantity
+                    </span>
+                </dd>
+            </dl>
+
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <button type="submit" class="btn btn-danger rounded-pill px-4 me-2">
+                    <i class="fas fa-trash me-1"></i> Xác nhận Xóa
+                </button>
+                
+                <a asp-action="Index" class="btn btn-light rounded-pill px-4 border">
+                    <i class="fas fa-undo me-1"></i> Quay lại danh sách
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

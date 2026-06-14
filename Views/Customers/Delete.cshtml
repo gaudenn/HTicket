@@ -1,0 +1,60 @@
+﻿@model HTicket.Models.Customer
+
+@{
+    ViewData["Title"] = "Xóa khách hàng";
+}
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-danger text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-user-minus me-2"></i> Xác nhận xóa khách hàng</h5>
+        </div>
+        
+        <div class="card-body p-4">
+            <h4 class="text-danger">Bạn có chắc chắn muốn xóa khách hàng này không?</h4>
+            <p class="text-muted">Lưu ý: Hành động này sẽ gỡ bỏ tài khoản khách hàng khỏi hệ thống. Các lịch sử đặt vé liên quan có thể bị ảnh hưởng.</p>
+            <hr />
+
+            <div class="row mt-4">
+                <div class="col-md-2 text-center mb-3">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 100px; height: 100px;">
+                        <i class="fas fa-user fa-3x text-secondary"></i>
+                    </div>
+                </div>
+
+                <div class="col-md-10">
+                    <dl class="row">
+                        <dt class="col-sm-3 fw-bold">Họ và tên</dt>
+                        <dd class="col-sm-9 text-dark fw-bold">@Model.FullName</dd>
+
+                        <dt class="col-sm-3 fw-bold">Email</dt>
+                        <dd class="col-sm-9">
+                            <a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a>
+                        </dd>
+
+                        <dt class="col-sm-3 fw-bold">Số điện thoại</dt>
+                        <dd class="col-sm-9">@Model.PhoneNumber</dd>
+
+                        <dt class="col-sm-3 fw-bold">Vai trò</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-secondary">@Model.Role</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <button type="submit" class="btn btn-danger rounded-pill px-4 me-2">
+                    <i class="fas fa-user-times me-1"></i> Xác nhận Xóa
+                </button>
+                
+                <a asp-action="Index" class="btn btn-light rounded-pill px-4 border">
+                    <i class="fas fa-undo me-1"></i> Quay lại danh sách
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,274 @@
+﻿@model IEnumerable<IGrouping<HTicket.Models.Customer, HTicket.Models.Order>>
+
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+    
+    var currentSearch = Context.Request.Query["searchString"];
+    var currentStatus = Context.Request.Query["statusFilter"];
+}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+
+    .select2-container .select2-selection--single { height: 38px !important; border: 1px solid #dee2e6; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 36px; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+</style>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary fw-bold mb-0">📋 Quản lý đơn hàng hệ thống</h2>
+        </div>
+        <a asp-action="Create" class="btn btn-primary shadow-sm px-4 fw-bold rounded-pill">
+            <i class="bi bi-plus-lg"></i> Đặt vé mới
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 p-3 bg-light mb-4">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            @if (User.Identity.IsAuthenticated)
+            {
+                @if (User.IsInRole("Admin"))
+                {
+                        <div class="col-md-5">
+                <label class="form-label small fw-bold text-muted text-uppercase">Tìm kiếm khách hàng</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="searchString" value="@currentSearch"
+                           class="form-control border-start-0" placeholder="Nhập tên khách hàng...">
+                </div>
+            </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted fw-bold">SỰ KIỆN</label>
+                        <select name="eventId" id="eventSelect" class="form-select select2">
+                        <option value="">-- Tất cả sự kiện --</option>
+                        @foreach (var ev in ViewBag.Events)
+                        {
+                            <option value="@ev.Id" selected="@(ViewData["CurrentEvent"]?.ToString() == ev.Id.ToString() ? "selected" : null)">
+                                @ev.Name
+                            </option>
+                        }
+                    </select>
+                    </div>
+            
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Trạng thái đơn</label>
+                            <select name="statusFilter" class="form-select">
+                                <option value="">-- Tất cả trạng thái --</option>
+                                <option value="Thành công" selected="@(currentStatus == "Thành công")">Thành công</option>
+                                <option value="Chờ thanh toán" selected="@(currentStatus == "Chờ thanh toán")">Chờ thanh toán</option>
+                                <option value="Đã hủy" selected="@(currentStatus == "Đã hủy")">Đã hủy</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-dark w-100 fw-bold">Lọc dữ liệu</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-3"><i class="bi bi-arrow-clockwise"></i></a>
+                        </div>
+                    }
+
+                }
+            </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center shadow-sm py-5 border-0">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            Không tìm thấy đơn hàng nào khớp với yêu cầu tìm kiếm.
+        </div>
+    }
+    else
+    {
+        <div class="accordion shadow-sm rounded-3 overflow-hidden" id="accordionOrders">
+            @foreach (var group in Model)
+            {
+                var customer = group.Key;
+                var customerId = customer?.Id ?? 0;
+                var customerName = customer?.FullName ?? "Khách ẩn danh";
+                var collapseId = "collapse" + customerId;
+                
+                // Tính tổng tiền cho những đơn thành công của khách này
+                var totalPaid = group.Where(o => o.Status == "Thành công").Sum(o => o.TotalAmount);
+
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed py-3" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
+                            <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                                <div>
+                                    <i class="bi bi-person-circle text-primary me-2 fs-5"></i>
+                                    <span class="fw-bold">@customerName</span>
+                                    <span class="badge bg-secondary rounded-pill ms-2">@group.Count() đơn</span>
+                                    @if (group.Any(o => o.Status == "Chờ thanh toán"))
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill ms-1 small" style="font-size: 0.7rem;">Có đơn chưa thu tiền</span>
+                                    }
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">TỔNG ĐÃ CHI TRẢ</small>
+                                    <span class="text-success fw-bold">@totalPaid.ToString("N0") đ</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse" data-bs-parent="#accordionOrders">
+                        <div class="accordion-body p-0 bg-light">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 bg-white">
+                                    <thead class="table-light small text-uppercase">
+                                        <tr>
+                                            <th class="ps-4">Sự kiện & Hạng vé</th>
+                                            <th class="text-center">Số lượng</th>
+                                            <th class="text-end">Tổng tiền</th>
+                                            <th class="text-center">Thời gian</th>
+                                            <th class="text-center">Trạng thái</th>
+                                            <th class="text-center pe-4">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in group.OrderByDescending(o => o.OrderDate))
+                                        {
+                                            <tr class="@(item.Status == "Đã hủy" ? "table-light opacity-75" : "")">
+                                                <td class="ps-4">
+                                                    <div class="fw-bold text-dark">@(item.Ticket?.Event?.Name ?? "Sự kiện đã xóa")</div>
+                                                    <small class="text-primary fw-600">@item.Ticket?.TicketType</small>
+                                                </td>
+                                                <td class="text-center">@item.Quantity</td>
+                                                <td class="text-end fw-bold @(item.Status == "Thành công" ? "text-success" : "text-dark")">
+                                                    @item.TotalAmount.ToString("N0") đ
+                                                </td>
+                                                <td class="text-center small text-muted">
+                                                    @item.OrderDate.ToString("dd/MM/yyyy")<br />
+                                                    <span class="badge bg-light text-dark fw-normal border">@item.OrderDate.ToString("HH:mm")</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    @{
+                                                        var badgeClass = item.Status switch
+                                                        {
+                                                            "Thành công" => "bg-success",
+                                                            "Chờ thanh toán" => "bg-warning text-dark",
+                                                            "Đã hủy" => "bg-danger",
+                                                            _ => "bg-secondary"
+                                                        };
+                                                    }
+                                                    <span class="badge @badgeClass rounded-pill px-3 shadow-sm">@item.Status</span>
+                                                </td>
+                                                <td class="text-nowrap text-center pe-4">
+                                                    @if (item.Status == "Chờ thanh toán")
+                                                    {
+                                                        <a asp-action="Checkout"
+                                                               asp-controller="Orders"
+                                                               asp-route-customerId="@item.CustomerId"
+                                                               class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold">
+                                                            <i class="bi bi-credit-card"></i> Trả tiền
+                                                        </a>
+                                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light border rounded-circle mx-1"><i class="bi bi-pencil"></i></a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" onclick="prepareCancel('@item.Id')"><i class="bi bi-x"></i></button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-link text-danger p-0 ms-2" onclick="prepareDelete('@item.Id')">
+                                                            <i class="bi bi-trash fs-5"></i>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@* Modal Xóa *@
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <input type="hidden" name="id" id="deleteId" />
+                    <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
+                    <p class="mt-3 mb-0">Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng này?</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Xóa ngay</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Modal Hủy *@
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="CancelOrder" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold">Hủy đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="id" id="cancelId" />
+                    <p>Hệ thống sẽ chuyển trạng thái đơn hàng sang <strong>Đã hủy</strong>.</p>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="form-check form-switch p-3 bg-light rounded-3 mt-3">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" name="restoreStock" id="restoreStock" value="true" checked>
+                            <label class="form-check-label fw-bold" for="restoreStock">Hoàn lại số lượng vé vào kho</label>
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" name="restoreStock" value="true" />
+                        <div class="p-3 bg-light rounded-3 mt-3">
+                            <p class="text-muted mb-0 small">
+                                <i class="fas fa-info-circle me-1"></i> Vé của bạn sẽ được tự động hoàn lại vào kho sau khi hủy thành công.
+                            </p>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Quay lại</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Xác nhận Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function prepareDelete(id) {
+            document.getElementById('deleteId').value = id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function prepareCancel(id) {
+            document.getElementById('cancelId').value = id;
+            new bootstrap.Modal(document.getElementById('cancelModal')).show();
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            placeholder: "-- Tìm và chọn sự kiện --",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+}

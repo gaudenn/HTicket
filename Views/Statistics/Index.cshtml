@@ -1,0 +1,186 @@
+﻿@{
+    ViewData["Title"] = "Báo cáo doanh thu & Dòng tiền";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold"><i class="bi bi-bar-chart-line"></i> Báo cáo & Thống kê doanh thu</h2>
+        <button class="btn btn-outline-secondary shadow-sm btn-sm" onclick="window.print()">
+            <i class="bi bi-printer"></i> Xuất báo cáo (PDF)
+        </button>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow-sm border-0">
+                <div class="card-body p-3">
+                    <h6 class="text-uppercase opacity-75 small">Doanh thu thực tế (Thành công)</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalRevenue.ToString("N0") đ</h3>
+                    <small><i class="bi bi-check-circle"></i> Tiền đã thực nhận</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark shadow-sm border-0">
+                <div class="card-body p-3">
+                    <h6 class="text-uppercase opacity-75 small">Dòng tiền đang chờ (Om vé)</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.PendingCash.ToString("N0") đ</h3>
+                    <small><i class="bi bi-hourglass-split"></i> Chờ thanh toán</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white shadow-sm border-0">
+                <div class="card-body p-3">
+                    <h6 class="text-uppercase opacity-75 small">Tỷ lệ lấp đầy hệ thống</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.OccupancyRate%</h3>
+                    <div class="progress mt-2" style="height: 5px; background-color: rgba(255,255,255,0.2);">
+                        <div class="progress-bar bg-white" role="progressbar"
+                             style="width: @ViewBag.OccupancyRate%"
+                             aria-valuenow="@ViewBag.OccupancyRate" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="mt-1 d-block">
+                        <i class="bi bi-ticket-perforated"></i> Đã bán @ViewBag.TotalSold / @ViewBag.TotalCapacity vé
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0 p-3 h-100">
+                <h5 class="fw-bold mb-3 small text-uppercase text-secondary"><i class="bi bi-graph-up"></i> Biến động doanh thu theo tháng</h5>
+                <div style="height: 300px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 p-3 h-100">
+                <h5 class="fw-bold mb-3 small text-uppercase text-secondary"><i class="bi bi-pie-chart"></i> Top 5 sự kiện nổi bật</h5>
+                <div style="height: 300px;">
+                    <canvas id="eventChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-4 mb-5">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-6">
+                <h5 class="fw-bold mb-0"><i class="bi bi-table"></i> Hiệu suất chi tiết sự kiện</h5>
+            </div>
+            <div class="col-md-6">
+                <form method="get" class="d-flex">
+                    <div class="input-group">
+                        <input type="text" name="searchEvent" class="form-control form-control-sm" placeholder="Tìm tên sự kiện..." value="@Context.Request.Query["searchEvent"]">
+                        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-search"></i> Tìm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border-top">
+                <thead class="table-light">
+                    <tr style="font-size: 0.85rem;" class="text-secondary text-uppercase">
+                        <th>Tên sự kiện</th>
+                        <th class="text-center">Phát hành</th>
+                        <th class="text-center">Đã bán</th>
+                        <th class="text-center">Đang giữ (Om)</th>
+                        <th class="text-center">Người mua</th>
+                        <th class="text-end">Doanh thu (Thực)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ViewBag.EventTable != null)
+                    {
+                        @foreach (var item in ViewBag.EventTable)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark">@item.EventName</td>
+                                <td class="text-center"><span class="badge bg-light text-dark border">@item.TotalTickets</span></td>
+                                <td class="text-center"><span class="badge bg-success-subtle text-success border border-success">@item.SoldTickets</span></td>
+                                <td class="text-center"><span class="badge bg-warning-subtle text-warning-emphasis border border-warning">@item.HoldingTickets</span></td>
+                                <td class="text-center">@item.TotalBuyers <i class="bi bi-person text-muted"></i></td>
+                                <td class="text-end fw-bold text-primary">@item.ActualCash.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Dữ liệu từ ViewBag
+    const mLabels = @Html.Raw(Json.Serialize(ViewBag.MonthlyLabels)) || [];
+    const mData = @Html.Raw(Json.Serialize(ViewBag.MonthlyData)) || [];
+    const eLabels = @Html.Raw(Json.Serialize(ViewBag.EventLabels)) || [];
+    const eData = @Html.Raw(Json.Serialize(ViewBag.EventData)) || [];
+
+    Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+    // --- 1. BIỂU ĐỒ DOANH THU (Line) ---
+    const revCtx = document.getElementById('revenueChart');
+    if (revCtx && mLabels.length > 0) {
+    new Chart(revCtx, {
+    type: 'line',
+    data: {
+    labels: mLabels,
+    datasets: [{
+    label: 'Doanh thu (VNĐ)',
+    data: mData,
+    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+    borderColor: '#0d6efd',
+    borderWidth: 3,
+    tension: 0.4,
+    fill: true,
+    pointRadius: 4
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+    y: {
+    beginAtZero: true,
+    ticks: { callback: (v) => v >= 1000000 ? (v/1000000) + 'Tr' : v.toLocaleString('vi-VN') }
+    }
+    }
+    }
+    });
+    }
+
+    // --- 2. BIỂU ĐỒ TOP SỰ KIỆN (Doughnut) ---
+    const eventCtx = document.getElementById('eventChart');
+    if (eventCtx && eLabels.length > 0) {
+    new Chart(eventCtx, {
+    type: 'doughnut',
+    data: {
+    labels: eLabels,
+    datasets: [{
+    data: eData,
+    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2'],
+    borderWidth: 2,
+    hoverOffset: 15
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } }
+    }
+    }
+    });
+    }
+    });
+</script>

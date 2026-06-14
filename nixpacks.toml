@@ -1,0 +1,9 @@
+[phases.build]
+# Xóa thư mục cũ (nếu có) và restore sạch sẽ
+cmds = [
+    "dotnet restore",
+    "dotnet publish -c Release -o out"
+]
+
+[start]
+cmd = "dotnet out/HTicket.dll"
