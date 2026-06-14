@@ -59,7 +59,21 @@ dotnet build
 
 # Khởi chạy dự án ở chế độ Watch (Tự động cập nhật khi sửa code/Prompt)
 dotnet watch run
+🎯 Kịch Bản Thử Nghiệm Luồng AI (Demo & Testing Workflow)
+Khi ứng dụng chạy, luồng xử lý câu hỏi từ giao diện Chatbot sẽ đi qua 3 bước thực tế theo logic code:
 
+Giai đoạn 1 - Sàng lọc Vector (RAG): Người dùng nhập câu hỏi (Ví dụ: "Tôi muốn mua vé xem Rap Việt"). Hệ thống gửi tập sự kiện thô sang Python AI để tìm các Event liên quan bằng thuật toán Vector Embedding.
+
+Giai đoạn 2 - Kiểm tra Kho vé & Đơn hàng: Hệ thống tự động bốc danh sách vé còn lại (RemainingQuantity) của các sự kiện đã lọc, đồng thời tra cứu lịch sử đơn hàng của khách theo customerId để làm ngữ cảnh phụ trợ.
+
+Giai đoạn 3 - Phân tích & Thực thi lệnh ẩn: Dữ liệu được nạp vào Prompt gửi cho Gemini để trả ra nội dung tư vấn dạng HTML (thẻ <b> in đậm tên show, <br> xuống dòng). Nếu khách hàng chốt mua hoặc hủy vé hợp lệ, AI sẽ tự động sinh lệnh ẩn dạng [CREATE_ORDER|MãVé|SốLượng] hoặc [CANCEL_ORDER|MãĐơn] để hệ thống phía sau xử lý tiếp.
+
+Các câu hỏi Test khi Demo:
+Test Tra cứu & Gợi ý: Hỏi "Ngày 05/12/2026 có show gì không?" -> AI sẽ nhận diện show Golf là Sắp diễn ra, từ chối đặt vé và tự động gợi ý thêm show Rap Việt (Đang mở bán).
+
+Test Chặn lỗi Kho vé: Đặt số lượng vé lớn hơn số lượng tồn kho thực tế -> AI sẽ đọc data từ tickets và từ chối: "Hiện tại loại vé này chỉ còn X vé".
+
+Test Bảo mật: Hệ thống chặn hoàn toàn việc hiển thị Mã vé công khai ra màn hình chat và giấu kín mọi thông báo Exception.
 🌐 Hướng Dẫn Triển Khai Lên Production (Railway Deployment)Dự án được cấu hình tối ưu hóa để deploy trực tiếp lên nền tảng Railway thông qua cấu hình Nixpacks (nixpacks.toml), tự động nhận diện môi trường .NET 10 để build source code mà không cần cấu hình Docker thủ công.
 Các bước thiết lập trên Railway:Kết nối Repo: Lên dashboard của Railway, chọn New Project  Deploy from GitHub repository và chọn repo HTicket.
 Cấu hình Biến môi trường (Variables):
