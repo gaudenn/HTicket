@@ -32,10 +32,10 @@ namespace HTicket.Services
         {
             try
             {
-                // 1. KIỂM TRA ID KHÁCH HÀNG
+                // KIỂM TRA ID KHÁCH HÀNG
                 if (!int.TryParse(customerId, out int cId)) return "Lỗi: ID khách hàng không hợp lệ.";
 
-                // 2. LẤY TOÀN BỘ SỰ KIỆN ĐỂ SÀNG LỌC QUA VECTOR
+                // LẤY TOÀN BỘ SỰ KIỆN ĐỂ SÀNG LỌC QUA VECTOR
                 var allEventsFromDb = await _context.Events
                     .Select(e => new { id = e.Id, name = $"{e.Name} ngày {e.EventDate.Value.ToString("dd/MM/yyyy")}" })
                     .AsNoTracking()
@@ -48,7 +48,7 @@ namespace HTicket.Services
                     try
                     {
                         var vectorRequest = new { query = userQuestion, events = allEventsFromDb };
-                        var vectorResponse = await _httpClient.PostAsJsonAsync("http://127.0.0.1:8000/api/retrieve", vectorRequest);
+                        var vectorResponse = await _httpClient.PostAsJsonAsync("https://hticketw2v.up.railway.app/api/retrieve", vectorRequest);
                         if (vectorResponse.IsSuccessStatusCode)
                         {
                             var vectorResult = await vectorResponse.Content.ReadFromJsonAsync<PythonVectorResponse>();
@@ -63,7 +63,7 @@ namespace HTicket.Services
                         Console.WriteLine($"[Vector AI Error]: {ex.Message}");
                     }
                 }
-                // 3. XÂY DỰNG CHUỖI LỊCH SỬ CHAT CHO GEMINI
+                // XÂY DỰNG CHUỖI LỊCH SỬ CHAT CHO GEMINI
                 StringBuilder conversationContext = new StringBuilder();
                 if (history != null && history.Any())
                 {
@@ -77,7 +77,7 @@ namespace HTicket.Services
                     conversationContext.AppendLine("--- KẾT THÚC LỊCH SỬ ---");
                 }
 
-                // 4. TRUY VẤN DATABASE
+                //  TRUY VẤN DATABASE
                 // Lấy danh sách sự kiện dựa trên AI tìm kiếm hoặc fallback lấy sự kiện mới nhất
                 var filteredEvents = relevantEventIds.Any()
                     ? await _context.Events
@@ -122,7 +122,7 @@ namespace HTicket.Services
                     .ToListAsync();
 
 
-                // 4. XÂY DỰNG NGỮ CẢNH (PROMPT) GỬI CHO GEMINI
+                // XÂY DỰNG NGỮ CẢNH (PROMPT) GỬI CHO GEMINI
 
                 StringBuilder sb = new StringBuilder();
 
@@ -151,37 +151,37 @@ namespace HTicket.Services
                     sb.AppendLine("- Bạn chưa có đơn hàng nào.");
                 }
 
-                // 5. THIẾT LẬP PROMPT QUY TẮC NGHIÊM NGẶT CHO GEMINI
+                //THIẾT LẬP PROMPT QUY TẮC NGHIÊM NGẶT CHO GEMINI
                 string promptText = $@"Bạn là H-TICKET, hệ thống xử lý giao dịch tự động. 
-Dữ liệu trạng thái hiện tại:
-{sb}
-Lịch sử hội thoại: {conversationContext}
-QUY TẮC PHẢN HỒI BẮT BUỘC:
-1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
-- Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
+                Dữ liệu trạng thái hiện tại:
+                {sb}
+                Lịch sử hội thoại: {conversationContext}
+                QUY TẮC PHẢN HỒI BẮT BUỘC:
+                1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
+                - Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
 
-- Nếu yêu cầu là HỦY ĐƠN: 
-    + CHỈ thực hiện khi khách hàng có ý định muốn HỦY đơn (Ví dụ: ""hủy giúp tôi"", ""tôi muốn hủy đơn"").
-    + KIỂM TRA trạng thái đơn hàng trong {{sb}}. Nếu trạng thái là 'Chờ thanh toán', TRẢ VỀ LỆNH: [CANCEL_ORDER|MãĐơn].
-    + Nếu khách chỉ hỏi về đơn hàng (Ví dụ: ""Đơn chưa thanh toán có sao không?"", ""Kiểm tra đơn...""): TRẢ LỜI CÂU HỎI, CẤM TRẢ VỀ LỆNH [CANCEL_ORDER].   
-- Nếu yêu cầu là sửa số lượng thì phản hồi khách phải vào mục 'Đơn hàng của tôi' để tự sửa.                      
-- RÀNG BUỘC CẤM:      
-+ CẤM tự ý phản hồi lệnh hủy đơn nếu không có yêu cầu.     
-+ CẤM hỏi xác nhận trước khi hủy đơn. Thực hiện hủy ngay lập tức nếu hợp lệ.     
-+ CẤM trả về bất kỳ nội dung nào khác ngoài lệnh khi có giao dịch được thực hiện.     
-+ CẤM bịa đặt ID sự kiện hoặc Mã vé.
-2. CẤU TRÚC PHẢN HỒI:   
-- Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
-- Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
-- Nếu thiếu thông tin: Chỉ hỏi đúng thông tin còn thiếu (ví dụ: số lượng), KHÔNG hỏi lại những gì đã có trong ngữ cảnh.
-3. ĐIỀU KIỆN RÀNG BUỘC:   
-- Nếu sự kiện ở trạng thái 'Sắp diễn ra': Thông báo 'Chưa mở bán' và giới thiệu các sự kiện 'Đang mở bán'. KHÔNG tạo lệnh.   
-- Luôn ưu tiên dữ liệu từ {sb}. Không sử dụng kiến thức bên ngoài nếu không có trong {sb}.
+                - Nếu yêu cầu là HỦY ĐƠN: 
+                    + CHỈ thực hiện khi khách hàng có ý định muốn HỦY đơn (Ví dụ: ""hủy giúp tôi"", ""tôi muốn hủy đơn"").
+                    + KIỂM TRA trạng thái đơn hàng trong {{sb}}. Nếu trạng thái là 'Chờ thanh toán', TRẢ VỀ LỆNH: [CANCEL_ORDER|MãĐơn].
+                    + Nếu khách chỉ hỏi về đơn hàng (Ví dụ: ""Đơn chưa thanh toán có sao không?"", ""Kiểm tra đơn...""): TRẢ LỜI CÂU HỎI, CẤM TRẢ VỀ LỆNH [CANCEL_ORDER].   
+                - Nếu yêu cầu là sửa số lượng thì phản hồi khách phải vào mục 'Đơn hàng của tôi' để tự sửa.                      
+                - RÀNG BUỘC CẤM:      
+                + CẤM tự ý phản hồi lệnh hủy đơn nếu không có yêu cầu.     
+                + CẤM hỏi xác nhận trước khi hủy đơn. Thực hiện hủy ngay lập tức nếu hợp lệ.     
+                + CẤM trả về bất kỳ nội dung nào khác ngoài lệnh khi có giao dịch được thực hiện.     
+                + CẤM bịa đặt ID sự kiện hoặc Mã vé.
+                2. CẤU TRÚC PHẢN HỒI:   
+                - Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
+                - Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
+                - Nếu thiếu thông tin: Chỉ hỏi đúng thông tin còn thiếu (ví dụ: số lượng), KHÔNG hỏi lại những gì đã có trong ngữ cảnh.
+                3. ĐIỀU KIỆN RÀNG BUỘC:   
+                - Nếu sự kiện ở trạng thái 'Sắp diễn ra': Thông báo 'Chưa mở bán' và giới thiệu các sự kiện 'Đang mở bán'. KHÔNG tạo lệnh.   
+                - Luôn ưu tiên dữ liệu từ {sb}. Không sử dụng kiến thức bên ngoài nếu không có trong {sb}.
 
-Câu hỏi của khách: {userQuestion}";
+                Câu hỏi của khách: {userQuestion}";
 
 
-                // 6. GỬI PROMPT SANG GEMINI
+                //  GỬI PROMPT SANG GEMINI
                 var requestBody = new
                 {
                     model = "google/gemini-2.5-flash-lite",
