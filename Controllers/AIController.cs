@@ -50,7 +50,7 @@ namespace HTicket.Controllers
 
             foreach (var t in activeTickets)
             {
-                // TỐI ƯU: Lấy danh sách order từ Lookup (không chạy lại truy vấn DB)
+                // TỐI ƯU: Lấy danh sách order từ Lookup
                 var ordersForTicket = ordersLookup[t.Id].ToList();
                 var recentOrders = ordersForTicket.Where(o => o.OrderDate >= sevenDaysAgo).ToList();
 
@@ -180,7 +180,7 @@ namespace HTicket.Controllers
             else if (p <= 2)
             {
                 forecast.DemandLevel = "RẤT CAO";
-                forecast.Recommendation = "Sắp cháy vé! Hãy bật thông báo 'Chỉ còn vài vé' để kích cầu FOMO.";
+                forecast.Recommendation = "Sắp cháy vé!";
             }
             else if (p <= 7)
             {

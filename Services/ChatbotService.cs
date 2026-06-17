@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace HTicket.Services
             _url = configuration["GeminiSettings:Url"];
         }
 
-        public async Task<string> GetReplyAsync(string userQuestion, string customerId)
+        public async Task<string> GetReplyAsync(string userQuestion, string customerId, List<ChatItem> history)
         {
             try
             {
@@ -47,7 +48,7 @@ namespace HTicket.Services
                     try
                     {
                         var vectorRequest = new { query = userQuestion, events = allEventsFromDb };
-                        var vectorResponse = await _httpClient.PostAsJsonAsync("https://hticketw2v-production.up.railway.app/api/retrieve", vectorRequest);
+                        var vectorResponse = await _httpClient.PostAsJsonAsync("http://127.0.0.1:8000/api/retrieve", vectorRequest);
                         if (vectorResponse.IsSuccessStatusCode)
                         {
                             var vectorResult = await vectorResponse.Content.ReadFromJsonAsync<PythonVectorResponse>();
@@ -62,7 +63,22 @@ namespace HTicket.Services
                         Console.WriteLine($"[Vector AI Error]: {ex.Message}");
                     }
                 }
-                // 3. TRUY VẤN DATABASE CHÍNH DỰA TRÊN KẾT QUẢ SÀNG LỌC CỦA VECTOR
+                // 3. XÂY DỰNG CHUỖI LỊCH SỬ CHAT CHO GEMINI
+                StringBuilder conversationContext = new StringBuilder();
+                if (history != null && history.Any())
+                {
+                    conversationContext.AppendLine("LỊCH SỬ 3 CUỘC TRÒ CHUYỆN TRƯỚC ĐÓ");
+                    foreach (var chat in history)
+                    {
+                        var recentHistory = history.TakeLast(5);
+                        string role = chat.Sender == "user" ? "Khách hàng" : "Chatbot";
+                        conversationContext.AppendLine($"{role}: {chat.Text}");
+                    }
+                    conversationContext.AppendLine("--- KẾT THÚC LỊCH SỬ ---");
+                }
+
+                // 4. TRUY VẤN DATABASE
+                // Lấy danh sách sự kiện dựa trên AI tìm kiếm hoặc fallback lấy sự kiện mới nhất
                 var filteredEvents = relevantEventIds.Any()
                     ? await _context.Events
                         .Where(e => relevantEventIds.Contains(e.Id) && (e.Status == "Đang mở bán" || e.Status == "Sắp diễn ra"))
@@ -98,7 +114,9 @@ namespace HTicket.Services
                         o.Id,
                         EventName = o.Ticket.Event.Name,
                         TicketType = o.Ticket.TicketType,
-                        o.Status
+                        o.Status,
+                        o.Quantity,
+                        o.TotalAmount
                     })
                     .AsNoTracking()
                     .ToListAsync();
@@ -125,7 +143,7 @@ namespace HTicket.Services
                 {
                     foreach (var o in orders)
                     {
-                        sb.AppendLine($"- Mã đơn: {o.Id} | Show: {o.EventName} | Loại vé: {o.TicketType} | Trạng thái: {o.Status}");
+                        sb.AppendLine($"- Mã đơn: {o.Id} | Show: {o.EventName} | Loại vé: {o.TicketType} | Trạng thái: {o.Status} | Số lượng: {o.Quantity} | Tổng cộng: {o.TotalAmount:N0}đ");
                     }
                 }
                 else
@@ -134,59 +152,77 @@ namespace HTicket.Services
                 }
 
                 // 5. THIẾT LẬP PROMPT QUY TẮC NGHIÊM NGẶT CHO GEMINI
-                string promptText = $@"
-                Bạn là trợ lý ảo thông minh H-TICKET, hỗ trợ khách hàng dựa trên dữ liệu hệ thống thực tế sau:
-                {sb}
+                string promptText = $@"Bạn là H-TICKET, hệ thống xử lý giao dịch tự động. 
+Dữ liệu trạng thái hiện tại:
+{sb}
+Lịch sử hội thoại: {conversationContext}
+QUY TẮC PHẢN HỒI BẮT BUỘC:
+1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
+- Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
 
-                QUY TẮC ĐẶT/HỦY VÉ BẮT BUỘC:
-                1. TRẢ LỜI THÔNG TIN:
-                   - ĐỐI VỚI SỰ KIỆN 'Sắp diễn ra': 
-                        + Nếu khách hỏi về sự kiện này, hãy thông báo rõ: 'Sự kiện này hiện tại chưa mở bán vé chính thức, bạn vui lòng theo dõi thêm thông báo từ hệ thống'. KHÔNG ĐƯỢC sinh lệnh [CREATE_ORDER] cho sự kiện này.
-                        + ĐỒNG THỜI, bạn phải chủ động chủ động giới thiệu và gợi ý thêm từ 1 đến 2 sự kiện khác đang có trạng thái 'Đang mở bán'
-                   - Trả lời đầy đủ, chi tiết, lịch sự bằng tiếng Việt. Sử dụng <br> để xuống dòng.
-                   - Hãy dùng thẻ <b> để in đậm tên sự kiện nhằm tăng trải nghiệm người dùng.
+- Nếu yêu cầu là HỦY ĐƠN: 
+    + CHỈ thực hiện khi khách hàng có ý định muốn HỦY đơn (Ví dụ: ""hủy giúp tôi"", ""tôi muốn hủy đơn"").
+    + KIỂM TRA trạng thái đơn hàng trong {{sb}}. Nếu trạng thái là 'Chờ thanh toán', TRẢ VỀ LỆNH: [CANCEL_ORDER|MãĐơn].
+    + Nếu khách chỉ hỏi về đơn hàng (Ví dụ: ""Đơn chưa thanh toán có sao không?"", ""Kiểm tra đơn...""): TRẢ LỜI CÂU HỎI, CẤM TRẢ VỀ LỆNH [CANCEL_ORDER].   
+- Nếu yêu cầu là sửa số lượng thì phản hồi khách phải vào mục 'Đơn hàng của tôi' để tự sửa.                      
+- RÀNG BUỘC CẤM:      
++ CẤM tự ý phản hồi lệnh hủy đơn nếu không có yêu cầu.     
++ CẤM hỏi xác nhận trước khi hủy đơn. Thực hiện hủy ngay lập tức nếu hợp lệ.     
++ CẤM trả về bất kỳ nội dung nào khác ngoài lệnh khi có giao dịch được thực hiện.     
++ CẤM bịa đặt ID sự kiện hoặc Mã vé.
+2. CẤU TRÚC PHẢN HỒI:   
+- Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
+- Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
+- Nếu thiếu thông tin: Chỉ hỏi đúng thông tin còn thiếu (ví dụ: số lượng), KHÔNG hỏi lại những gì đã có trong ngữ cảnh.
+3. ĐIỀU KIỆN RÀNG BUỘC:   
+- Nếu sự kiện ở trạng thái 'Sắp diễn ra': Thông báo 'Chưa mở bán' và giới thiệu các sự kiện 'Đang mở bán'. KHÔNG tạo lệnh.   
+- Luôn ưu tiên dữ liệu từ {sb}. Không sử dụng kiến thức bên ngoài nếu không có trong {sb}.
 
-                2. NGHIỆP VỤ ĐẶT VÉ (CREATE_ORDER):
-                   - Khi khách hàng có ý định đặt vé hoặc mua vé: Hãy kiểm tra 'MãVé' và số lượng còn lại trong kho vé ở trên.
-                   - Nếu khách mua vượt quá số lượng 'Còn lại', hãy báo: 'Hiện tại loại vé này chỉ còn [Số lượng] vé'.
-                   - Không được nói mã vé cho khách
-                   - Nếu thỏa mãn, bắt buộc trả về chuỗi lệnh chính xác theo cấu trúc: [CREATE_ORDER|MãVé|SốLượng]
-                   - Ví dụ: [CREATE_ORDER|5|2] (Nghĩa là đặt 2 vé của mã vé có ID là 5).
-                   - Không trả lời mã lệnh 
-                3. NGHIỆP VỤ HỦY ĐƠN (CANCEL_ORDER):
-                   - Nếu khách muốn hủy đơn hàng, hãy tra cứu trong mục 'ĐƠN HÀNG HIỆN TẠI CỦA KHÁCH' để lấy đúng Mã đơn.
-                   - Nếu đơn hiện tại khách muốn hủy có status 'thành công' thì không thể hủy và báo lại khách liên hệ quản trị viên
-                   - Định dạng lệnh hủy bắt buộc: [CANCEL_ORDER|MãĐơn]
-                   - Ví dụ: [CANCEL_ORDER|102].
+Câu hỏi của khách: {userQuestion}";
 
-                LƯU Ý: - Không tự bịa ID sự kiện hoặc Mã vé nếu dữ liệu trên không tồn tại.
-                       - Không trả lời mã lệnh [CANCEL_ORDER:MãĐơn], [CREATE_ORDER|MãVé|SốLượng]
-                Câu hỏi của khách: {userQuestion}";
 
                 // 6. GỬI PROMPT SANG GEMINI
-                var requestBody = new { contents = new[] { new { parts = new[] { new { text = promptText } } } } };
-                var json = JsonSerializer.Serialize(requestBody);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var requestBody = new
+                {
+                    model = "google/gemini-2.5-flash-lite",
+                    messages = new[]
+                            {
+                                new { role = "system", content = "Bạn là trợ lý H-TICKET thông minh." },
+                                new { role = "user", content = promptText }
+                            }
+                };
 
-                var response = await _httpClient.PostAsync($"{_url}?key={_apiKey}", content);
-                string errorContent = await response.Content.ReadAsStringAsync();
+                var json = JsonSerializer.Serialize(requestBody);
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Tạo request message riêng để không đụng chạm đến HttpClient dùng chung
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Post, _url);
+                requestMessage.Content = content;
+
+                // Thêm Header vào request này thay vì HttpClient
+                requestMessage.Headers.Add("Authorization", $"Bearer {_apiKey}");
+                requestMessage.Headers.Add("HTTP-Referer", "http://localhost:5000");
+                requestMessage.Headers.Add("X-Title", "HTicket Chatbot");
+
+                var response = await _httpClient.SendAsync(requestMessage);
+
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadAsStringAsync();
                     using var doc = JsonDocument.Parse(result);
-                    return doc.RootElement.GetProperty("candidates")[0]
-                                          .GetProperty("content")
-                                          .GetProperty("parts")[0]
-                                          .GetProperty("text").GetString();
+                    return doc.RootElement.GetProperty("choices")[0]
+                                          .GetProperty("message")
+                                          .GetProperty("content").GetString();
                 }
                 else
                 {
-                    return "H-TICKET xin chào! Hệ thống đang bận xử lý dữ liệu trong giây lát, bạn vui lòng thử lại sau nhé.";
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[OpenRouter Error]: {errorContent}"); // Log lỗi để debug
+                    return "H-TICKET xin chào! Hệ thống đang bận xử lý dữ liệu, bạn vui lòng thử lại sau nhé.";
                 }
 
 
-
-                }
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CRITICAL SECURITY LOG]: {ex.Message}\n{ex.StackTrace}");

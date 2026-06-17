@@ -6,7 +6,6 @@
     <title>@ViewData["Title"] - Quản Lý Bán Vé</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <!-- Thêm FontAwesome để hiện icon Chatbot -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 <body>
@@ -69,18 +68,14 @@
                 </div>
             </div>
         </nav>
-
-        
     </header>
 
-    <!-- NỘI DUNG CHÍNH CỦA TRANG WEB -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <!-- GIAO DIỆN CHATBOT (FIXED) -->
     <div id="chat-wrapper" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
         <button id="chat-toggle" class="btn btn-primary rounded-circle shadow-lg" style="width: 60px; height: 60px;">
             <i class="fas fa-comment-dots" style="font-size: 24px;"></i>
@@ -111,135 +106,219 @@
     </div>
 
     <style>
-            .chat-input-area {
-                background: #fff;
-                padding: 12px;
-                border-top: 1px solid #eee;
-            }
+        .chat-input-area {
+            background: #fff;
+            padding: 12px;
+            border-top: 1px solid #eee;
+        }
 
-            #chatInput {
-                border: 1px solid #dee2e6;
-                border-right: none;
-                border-radius: 20px 0 0 20px !important;
-                box-shadow: none !important;
-                font-size: 14px;
-            }
+        #chatInput {
+            border: 1px solid #dee2e6;
+            border-right: none;
+            border-radius: 20px 0 0 20px !important;
+            box-shadow: none !important;
+            font-size: 14px;
+        }
 
-            #btnSend {
-                border-radius: 0 20px 20px 0 !important;
-                padding: 0 18px;
-            }
+        #btnSend {
+            border-radius: 0 20px 20px 0 !important;
+            padding: 0 18px;
+        }
 
-            .user-msg-wrapper {
-                text-align: right;
-                margin-bottom: 15px;
-            }
+        .user-msg-wrapper {
+            text-align: right;
+            margin-bottom: 15px;
+        }
 
-            .user-msg {
-                background-color: #0084ff;
-                color: #fff;
-                padding: 10px 14px;
-                border-radius: 18px 18px 2px 18px;
-                display: inline-block;
-                max-width: 80%;
-                word-wrap: break-word;
-                font-size: 14px;
-            }
+        .user-msg {
+            background-color: #0084ff;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 18px 18px 2px 18px;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+            font-size: 14px;
+            text-align: left !important;
+        }
 
-            .bot-msg-wrapper {
-                text-align: left;
-                margin-bottom: 15px;
-            }
+        .bot-msg-wrapper {
+            text-align: left;
+            margin-bottom: 15px;
+        }
 
-            .bot-msg {
-                background-color: #e4e6eb;
-                color: #050505;
-                padding: 10px 14px;
-                border-radius: 18px 18px 18px 2px;
-                display: inline-block;
-                max-width: 80%;
-                word-wrap: break-word;
-                font-size: 14px;
-                white-space: pre-line;
-            }
+        .bot-msg {
+            background-color: #e4e6eb;
+            color: #050505;
+            padding: 10px 14px;
+            border-radius: 18px 18px 18px 2px;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+            font-size: 14px;
+            white-space: pre-line;
+        }
 
-                .bot-msg b {
-                    color: #007bff;
-                    font-weight: bold;
-                }
+        .bot-msg b {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        /* TÁCH BIỆT CSS BONG BÓNG LOADING RIỆNG */
+        .bot-loading-msg {
+            background-color: #e4e6eb;
+            border-radius: 18px 18px 18px 2px;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+        }
+
+        .typing-indicator {
+            display: flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+        }
+
+        .typing-indicator span {
+            height: 8px !important;
+            width: 8px !important;
+            background-color: #90949c !important;
+            border-radius: 50% !important;
+            display: inline-block !important;
+            animation: bounce 1.3s infinite ease-in-out !important;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s !important; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s !important; }
+
+        @@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
     </style>
 
-    <!-- NẠP THƯ VIỆN TRƯỚC -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    <!-- NẠP SCRIPT CỦA TỪNG TRANG -->
     @await RenderSectionAsync("Scripts", required: false)
 
-    <!-- MÃ ĐIỀU KHIỂN CHATBOT -->
     <script>
-        const chatToggle = document.getElementById('chat-toggle');
-        const chatBox = document.getElementById('chat-box');
-        const chatInput = document.getElementById('chatInput');
-        const btnSend = document.getElementById('btnSend');
-        const chatContent = document.getElementById('chat-content');
+     const chatToggle = document.getElementById('chat-toggle');
+     const chatBox = document.getElementById('chat-box');
+     const chatInput = document.getElementById('chatInput');
+     const btnSend = document.getElementById('btnSend');
+     const chatContent = document.getElementById('chat-content');
+     
+     // Khai báo một biến để lưu trữ thẻ loading, dễ xóa khi tải xong
+     let currentLoadingDiv = null;
 
-        chatToggle.onclick = () => chatBox.classList.toggle('d-none');
-        document.getElementById('chat-close').onclick = () => chatBox.classList.add('d-none');
+     chatToggle.onclick = () => {
+         chatBox.classList.toggle('d-none');
+         if (!chatBox.classList.contains('d-none')) {
+             chatContent.scrollTop = chatContent.scrollHeight;
+         }
+     };
+     document.getElementById('chat-close').onclick = () => chatBox.classList.add('d-none');
 
-        function saveToSession(sender, text) {
-        let history = JSON.parse(sessionStorage.getItem('chat_history')) || [];
-        history.push({ sender, text });
-        sessionStorage.setItem('chat_history', JSON.stringify(history));
-        }
+     function saveToSession(sender, text) {
+         let history = JSON.parse(sessionStorage.getItem('chat_history')) || [];
+         history.push({ sender, text });
+         sessionStorage.setItem('chat_history', JSON.stringify(history));
+     }
 
-        function renderMessage(sender, text) {
-        const div = document.createElement('div');
-        div.className = sender === 'user' ? 'user-msg-wrapper' : 'bot-msg-wrapper';
-        if (sender === 'user') {
-        div.innerHTML = `<div class="user-msg"></div>`;
-        div.querySelector('.user-msg').textContent = text;
-        } else {
-        div.innerHTML = `<div class="bot-msg">${text}</div>`;
-        }
-        chatContent.appendChild(div);
-        chatContent.scrollTop = chatContent.scrollHeight;
-        }
+     function renderMessage(sender, text) {
+         const div = document.createElement('div');
+         div.className = sender === 'user' ? 'user-msg-wrapper' : 'bot-msg-wrapper';
+         if (sender === 'user') {
+             div.innerHTML = `<div class="user-msg"></div>`;
+             div.querySelector('.user-msg').textContent = text;
+         } else {
+             div.innerHTML = `<div class="bot-msg">${text}</div>`;
+         }
+         chatContent.appendChild(div);
+         chatContent.scrollTop = chatContent.scrollHeight;
+     }
 
-        window.addEventListener('load', () => {
-        let history = JSON.parse(sessionStorage.getItem('chat_history'));
-        if (history) {
-        history.forEach(item => renderMessage(item.sender, item.text));
-        }
-        });
+     window.addEventListener('load', () => {
+         let history = JSON.parse(sessionStorage.getItem('chat_history'));
+         if (history) {
+             history.forEach(item => renderMessage(item.sender, item.text));
+         }
+     });
 
-        async function sendMessage() {
-        const msg = chatInput.value.trim();
-        if (!msg) return;
+     async function sendMessage() {
+         const msg = chatInput.value.trim();
+         if (!msg) return;
 
-        renderMessage('user', msg);
-        saveToSession('user', msg);
-        chatInput.value = '';
+         // 1. Hiển thị tin nhắn của Người dùng
+         renderMessage('user', msg);
+         saveToSession('user', msg);
+         chatInput.value = '';
 
-        try {
-        const response = await fetch('/Chatbot/SendMessage', {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-        },
-        body: JSON.stringify({ message: msg })
-        });
-        const data = await response.json();
-        renderMessage('bot', data.reply);
-        saveToSession('bot', data.reply);
-        } catch (error) {
-        renderMessage('bot', '⚠️ Lỗi kết nối máy chủ.');
-        }
-        }
+         // 2. TẠO VÀ HIỂN THỊ HIỆU ỨNG CHATBOT ĐANG GÕ (...)
+         if (!currentLoadingDiv) {
+             currentLoadingDiv = document.createElement('div');
+             currentLoadingDiv.className = 'bot-msg-wrapper';
+             // Dùng class riêng biệt (.bot-loading-msg) viết liền trên 1 dòng để tránh lỗi ngắt quãng khoảng trắng
+             currentLoadingDiv.innerHTML = '<div class="bot-loading-msg"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+             chatContent.appendChild(currentLoadingDiv);
+             chatContent.scrollTop = chatContent.scrollHeight;
+         }
 
-        btnSend.onclick = sendMessage;
-        chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-    </script></body>
+         try {
+             const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenElement ? tokenElement.value : '';
+
+            // [MỚI - CẢI TIẾN RAG]: Bốc lịch sử chat từ Session và chuẩn hóa viết hoa thuộc tính cho C#
+            const rawHistory = JSON.parse(sessionStorage.getItem('chat_history')) || [];
+            const chatHistory = rawHistory.map(item => ({
+                Sender: item.sender,
+                Text: item.text
+            }));
+
+            // 3. GỌI API ĐẾN SERVER C# BACKEND
+            const response = await fetch('/Chatbot/SendMessage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                // [CẬP NHẬT]: Truyền đầy đủ cả message lẫn mảng lịch sử chatHistory
+                body: JSON.stringify({ 
+                    message: msg,
+                    history: chatHistory
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error("Server trả lỗi: " + response.status);
+            }
+
+            const data = await response.json();
+            
+            // 4. XÓA HIỆU ỨNG LOADING VÀ HIỂN THỊ TIN NHẮN THẬT CỦA BOT
+            if (currentLoadingDiv) {
+                currentLoadingDiv.remove();
+                currentLoadingDiv = null;
+            }
+            
+            renderMessage('bot', data.reply);
+            saveToSession('bot', data.reply);
+         } catch (error) {
+             // Sửa lỗi mất mạng/lỗi server: Xóa loading và báo lỗi
+             if (currentLoadingDiv) {
+                 currentLoadingDiv.remove();
+                 currentLoadingDiv = null;
+             }
+             renderMessage('bot', '⚠️ Không thể kết nối hoặc dữ liệu không hợp lệ.');
+             console.error("[Chatbot Error]:", error);
+         }
+     }
+
+     btnSend.onclick = sendMessage;
+     chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+ </script>
+</body>
 </html>
