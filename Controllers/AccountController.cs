@@ -33,7 +33,7 @@ public class AccountController : Controller
             return View(); 
         }
 
-        string userRole = (customer.Email.ToLower() == "admin@gmail.com") ? "Admin" : "Customer";
+        string userRole = customer.Role ?? "Customer";
 
         //  Tạo danh sách Claims từ thông tin trong DB
         var claims = new List<Claim>
