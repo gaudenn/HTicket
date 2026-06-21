@@ -169,7 +169,7 @@ namespace HTicket.Services
                 + CẤM tự ý phản hồi lệnh hủy đơn nếu không có yêu cầu.     
                 + CẤM hỏi xác nhận trước khi hủy đơn. Thực hiện hủy ngay lập tức nếu hợp lệ.     
                 + CẤM trả về bất kỳ nội dung nào khác ngoài lệnh khi có giao dịch được thực hiện.     
-                + CẤM bịa đặt ID sự kiện hoặc Mã vé.
+                + CẤM trả lời ID sự kiện hoặc Mã vé cho khách.
                 2. CẤU TRÚC PHẢN HỒI:   
                 - Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
                 - Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
