@@ -3,7 +3,7 @@
 HTicket là một hệ thống quản lý và phân phối vé sự kiện tiên tiến dựa trên kiến trúc **.NET 10 MVC**. Hệ thống được nâng cấp đột phá bằng cách tích hợp trợ lý ảo AI thông minh, kết hợp giữa công nghệ tìm kiếm ngữ nghĩa (Vector Retrieval) và mô hình ngôn ngữ lớn (LLM) giúp tự động hóa quy trình tư vấn và xử lý nghiệp vụ đặt/hủy vé theo thời gian thực.
 
 ---
-Live demo : hticket-hung.up.railway.app
+Live demo : hticket-hung01842.up.railway.app
 ## ✨ Tính Năng Nổi Bật
 
 - **🤖 Trợ Lý Ảo H-TICKET:** Sử dụng **Gemini API** để giao tiếp, hiểu và phản hồi khách hàng bằng ngôn ngữ tự nhiên, mang lại trải nghiệm tư vấn cá nhân hóa, chi tiết và lịch sự.
