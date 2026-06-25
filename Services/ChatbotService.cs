@@ -48,7 +48,7 @@ namespace HTicket.Services
                     try
                     {
                         var vectorRequest = new { query = userQuestion, events = allEventsFromDb };
-                        var vectorResponse = await _httpClient.PostAsJsonAsync("https://hticketw2v.up.railway.app/api/retrieve", vectorRequest);
+                        var vectorResponse = await _httpClient.PostAsJsonAsync("hticketw2v-production.up.railway.app/api/retrieve", vectorRequest);
                         if (vectorResponse.IsSuccessStatusCode)
                         {
                             var vectorResult = await vectorResponse.Content.ReadFromJsonAsync<PythonVectorResponse>();
