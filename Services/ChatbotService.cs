@@ -173,7 +173,7 @@ namespace HTicket.Services
                 2. CẤU TRÚC PHẢN HỒI:   
                 - Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
                 - Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
-                - Nếu thiếu thông tin: Chỉ hỏi đúng thông tin còn thiếu (ví dụ: số lượng), KHÔNG hỏi lại những gì đã có trong ngữ cảnh.
+                
                 3. ĐIỀU KIỆN RÀNG BUỘC:   
                 - Nếu sự kiện ở trạng thái 'Sắp diễn ra': Thông báo 'Chưa mở bán' và giới thiệu các sự kiện 'Đang mở bán'. KHÔNG tạo lệnh.   
                 - Luôn ưu tiên dữ liệu từ {sb}. Không sử dụng kiến thức bên ngoài nếu không có trong {sb}.
