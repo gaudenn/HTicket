@@ -67,10 +67,10 @@ namespace HTicket.Services
                 StringBuilder conversationContext = new StringBuilder();
                 if (history != null && history.Any())
                 {
-                    conversationContext.AppendLine("LỊCH SỬ 3 CUỘC TRÒ CHUYỆN TRƯỚC ĐÓ");
+                    conversationContext.AppendLine("LỊCH SỬ 10 CUỘC TRÒ CHUYỆN TRƯỚC ĐÓ");
                     foreach (var chat in history)
                     {
-                        var recentHistory = history.TakeLast(5);
+                        var recentHistory = history.TakeLast(10);
                         string role = chat.Sender == "user" ? "Khách hàng" : "Chatbot";
                         conversationContext.AppendLine($"{role}: {chat.Text}");
                     }
@@ -126,7 +126,7 @@ namespace HTicket.Services
 
                 StringBuilder sb = new StringBuilder();
 
-                sb.AppendLine("DANH SÁCH SỰ KIỆN PHÙ HỢP (ĐÃ QUA SÀNG LỌC AI):");
+                sb.AppendLine("DANH SÁCH SỰ KIỆN PHÙ HỢP:");
                 foreach (var ev in filteredEvents)
                 {
                     sb.AppendLine($"- [ID: {ev.Id}] {ev.Name} | Địa điểm: {ev.Location} | Ngày: {ev.EventDate:dd/MM/yyyy} | Trạng thái: {ev.Status}");
@@ -159,7 +159,7 @@ namespace HTicket.Services
                 QUY TẮC PHẢN HỒI BẮT BUỘC:
                 1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
                 - Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
-
+                - Không cần hỏi xác nhận khách hàng, thực hiện ngay lập tức nếu hợp lệ.
                 - Nếu yêu cầu là HỦY ĐƠN: 
                     + CHỈ thực hiện khi khách hàng có ý định muốn HỦY đơn (Ví dụ: ""hủy giúp tôi"", ""tôi muốn hủy đơn"").
                     + KIỂM TRA trạng thái đơn hàng trong {{sb}}. Nếu trạng thái là 'Chờ thanh toán', TRẢ VỀ LỆNH: [CANCEL_ORDER|MãĐơn].
