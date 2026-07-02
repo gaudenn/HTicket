@@ -159,8 +159,7 @@ namespace HTicket.Services
                 Lịch sử hội thoại: {conversationContext}
                 QUY TẮC PHẢN HỒI BẮT BUỘC:
                 1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
-                - Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, trả về thông báo: Đơn hàng hiện đang ở trạng thái 'Chờ thanh toán'. Bạn vui lòng truy cập 'Đơn hàng của tôi' để hoàn tất thanh toán trước khi vé hết hạn nhé.
-                - Cuối cùng TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
+                - Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
                 - Không cần hỏi xác nhận khách hàng, thực hiện ngay lập tức nếu hợp lệ.
                 - Nếu yêu cầu là HỦY ĐƠN: 
                     + CHỈ thực hiện khi khách hàng có ý định muốn HỦY đơn (Ví dụ: ""hủy giúp tôi"", ""tôi muốn hủy đơn"").
