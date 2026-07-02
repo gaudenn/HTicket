@@ -156,7 +156,7 @@ namespace HTicket.Services
                 string promptText = $@"Bạn là H-TICKET, hệ thống xử lý giao dịch tự động. 
                 Dữ liệu trạng thái hiện tại:
                 {sb}
-                Lịch sử hội thoại: {conversationContext}
+                Lịch sử hội thoại: {conversationContext} Dựa vào lịch sử trò chuyện để biết khách quan tâm tới sự kiện nào để phục vụ yêu cầu đặt vé cho khách mà ko cần hỏi lại.
                 QUY TẮC PHẢN HỒI BẮT BUỘC:
                 1. XỬ LÝ LỆNH (Ưu tiên tuyệt đối):   
                 - Nếu yêu cầu là ĐẶT VÉ: Kiểm tra tồn kho từ {sb}. Nếu đủ, TRẢ VỀ LỆNH: [CREATE_ORDER|MãVé|SốLượng].   
