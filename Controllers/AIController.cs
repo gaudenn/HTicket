@@ -18,65 +18,70 @@ namespace HTicket.Controllers
             _aiService = aiService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchString)
         {
-            // 1. Kiểm tra và huấn luyện AI (Giữ nguyên logic cũ)
+            ViewData["CurrentFilter"] = searchString;
+        
+            // 1. Kiểm tra và huấn luyện AI
             if (!_aiService.IsTrained)
             {
                 var historyData = await GetHistoryFromOrders();
                 _aiService.TrainModel(historyData);
             }
-
-            // 2. Lấy danh sách vé và Event kèm theo
-            var activeTickets = await _context.Tickets
+        
+            // 2. Lấy danh sách Vé có áp dụng bộ lọc Search
+            // Chúng ta khởi tạo query từ Tickets, bao gồm cả Event
+            var query = _context.Tickets
                 .Include(t => t.Event)
-                .Where(t => t.Event.Status == "Đang mở bán" && t.Event.EventDate >= DateTime.Now)
-                .ToListAsync();
-
+                .Where(t => t.Event.Status == "Đang mở bán" && t.Event.EventDate >= DateTime.Now);
+        
+            // Áp dụng tìm kiếm nếu có từ khóa
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(t => t.Event.Name.Contains(searchString));
+            }
+        
+            var activeTickets = await query.ToListAsync();
             var ticketIds = activeTickets.Select(t => t.Id).ToList();
-
-            // TỐI ƯU: Chỉ lấy dữ liệu Orders cần thiết và phân nhóm (Lookup) ngay trên bộ nhớ để tránh trùng lặp
+        
+            // 3. Lấy dữ liệu Orders (Chỉ lấy của các vé đã lọc)
             var allOrders = await _context.Orders
                 .Where(o => ticketIds.Contains(o.TicketId) && o.Status == "Thành công")
                 .OrderBy(o => o.OrderDate)
                 .ToListAsync();
-
-            // Chuyển danh sách thành ToLookup để tìm kiếm với độ phức tạp O(1) thay vì Where liên tục
+        
             var ordersLookup = allOrders.ToLookup(o => o.TicketId);
-
+        
+            // 4. Tính toán dự báo
             var forecasts = new List<DemandForecast>();
             var now = DateTime.Now;
             var sevenDaysAgo = now.AddDays(-7);
-
+        
             foreach (var t in activeTickets)
             {
-                // TỐI ƯU: Lấy danh sách order từ Lookup
                 var ordersForTicket = ordersLookup[t.Id].ToList();
                 var recentOrders = ordersForTicket.Where(o => o.OrderDate >= sevenDaysAgo).ToList();
-
-                // Logic tính DaysSinceLaunch (Giữ nguyên)
+        
                 float daysSinceLaunch = ordersForTicket.Any()
                     ? (float)(now - ordersForTicket.First().OrderDate).TotalDays
                     : 0.1f;
-
-                // Logic tính Tốc độ Velocity (Giữ nguyên)
+        
                 float measureDays = Math.Min(daysSinceLaunch, 7.0f);
                 if (measureDays < 0.1f) measureDays = 0.1f;
-
+        
                 float velocity = (float)recentOrders.Sum(o => o.Quantity) / measureDays;
                 float avgQty = recentOrders.Any() ? (float)recentOrders.Average(o => o.Quantity) : 0;
-
                 float daysUntilEvent = (float)(t.Event.EventDate.Value - now).TotalDays;
-
-                // Gọi dịch vụ AI dự báo (Giữ nguyên)
+        
                 float predictedDays = _aiService.PredictDaysUntilSoldOut(
                     (float)t.RemainingQuantity, velocity, avgQty, daysSinceLaunch);
-
+        
                 if (predictedDays > daysUntilEvent) predictedDays = daysUntilEvent;
-
+        
                 forecasts.Add(FormatDemandForecast(t, velocity, predictedDays, daysUntilEvent));
             }
-
+        
+            // Trả về view với kết quả đã được lọc và group
             return View(forecasts.GroupBy(f => f.EventName).ToList());
         }
 
