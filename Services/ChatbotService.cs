@@ -83,6 +83,7 @@ namespace HTicket.Services
                     ? await _context.Events
                         .Where(e => relevantEventIds.Contains(e.Id) && (e.Status == "Đang mở bán" || e.Status == "Sắp diễn ra"))
                         .Select(e => new { e.Id, e.Name, e.Location, e.EventDate, e.Status })
+                        .Take(5)
                         .AsNoTracking()
                         .ToListAsync()
                     : await _context.Events
