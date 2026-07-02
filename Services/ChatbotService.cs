@@ -48,7 +48,7 @@ namespace HTicket.Services
                     try
                     {
                         var vectorRequest = new { query = userQuestion, events = allEventsFromDb };
-                        var vectorResponse = await _httpClient.PostAsJsonAsync("https://hticketw2v.up.railway.app/api/retrieve", vectorRequest);
+                        var vectorResponse = await _httpClient.PostAsJsonAsync("https://hticketw2v-production.up.railway.app/api/retrieve", vectorRequest);
                         if (vectorResponse.IsSuccessStatusCode)
                         {
                             var vectorResult = await vectorResponse.Content.ReadFromJsonAsync<PythonVectorResponse>();
@@ -169,11 +169,11 @@ namespace HTicket.Services
                 + CẤM tự ý phản hồi lệnh hủy đơn nếu không có yêu cầu.     
                 + CẤM hỏi xác nhận trước khi hủy đơn. Thực hiện hủy ngay lập tức nếu hợp lệ.     
                 + CẤM trả về bất kỳ nội dung nào khác ngoài lệnh khi có giao dịch được thực hiện.     
-                + CẤM bịa đặt ID sự kiện hoặc Mã vé.
+                + CẤM trả lời ID sự kiện hoặc Mã vé cho khách.
                 2. CẤU TRÚC PHẢN HỒI:   
                 - Nếu phát sinh lệnh: Phản hồi duy nhất 1 câu xác nhận kèm mã lệnh (Ví dụ: ""Đã hủy đơn 102. [CANCEL_ORDER|102]"").   
                 - Nếu không phát sinh lệnh: Cung cấp thông tin chi tiết dựa vào {sb}. Sử dụng thẻ <b> cho tên sự kiện, <br> để xuống dòng.   
-                - Nếu thiếu thông tin: Chỉ hỏi đúng thông tin còn thiếu (ví dụ: số lượng), KHÔNG hỏi lại những gì đã có trong ngữ cảnh.
+                
                 3. ĐIỀU KIỆN RÀNG BUỘC:   
                 - Nếu sự kiện ở trạng thái 'Sắp diễn ra': Thông báo 'Chưa mở bán' và giới thiệu các sự kiện 'Đang mở bán'. KHÔNG tạo lệnh.   
                 - Luôn ưu tiên dữ liệu từ {sb}. Không sử dụng kiến thức bên ngoài nếu không có trong {sb}.
