@@ -94,7 +94,7 @@ namespace HTicket.Controllers
                                 await _context.SaveChangesAsync();
                                 await transaction.CommitAsync();
 
-                                systemNotification += $"✅ <b>Hệ thống:</b> Đã tạo đơn hàng thành công cho show <b>{ticket.Event?.Name}</b> (Số lượng: {buyQty}). Bạn vui lòng vào mục "Đơn hàng của tôi" để thanh toán ngay nhé";
+                                systemNotification += $"✅ <b>Hệ thống:</b> Đã tạo đơn hàng thành công cho show <b>{ticket.Event?.Name}</b> (Số lượng: {buyQty}). Bạn vui lòng vào mục Đơn hàng của tôi để thanh toán ngay nhé";
                             }
                         }
                         catch (Exception)
